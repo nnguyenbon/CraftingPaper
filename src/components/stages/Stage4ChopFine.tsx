@@ -52,13 +52,13 @@ export const Stage4ChopFine: React.FC<Stage4Props> = ({ materials, onComplete })
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 04 · Băm Nhỏ
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Băm Nhỏ Cỏ Chuẩn Bị Nấu
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Nhấp chuột trực tiếp lên bề mặt thớt để băm cỏ thành từng mẩu vụn ngắn 1–2cm, giúp kiềm tro ngấm đều khi nấu.
         </p>
       </div>

@@ -61,13 +61,13 @@ export const Stage2CutGrass: React.FC<Stage2Props> = ({ materials, onComplete })
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 02 · Cắt Cỏ
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Cắt Cỏ Thành Từng Đoạn
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Nhấp dọc theo 5 đường cắt trên thớt để hạ dao cắt 10 cọng {isPandan ? 'cỏ lá dứa' : 'cỏ lá sả'} mảnh dài thành từng đoạn ngắn chuẩn bị rửa sạch.
         </p>
       </div>

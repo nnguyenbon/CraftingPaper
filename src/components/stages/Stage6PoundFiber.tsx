@@ -74,13 +74,13 @@ export const Stage6PoundFiber: React.FC<Stage6Props> = ({ materials, onComplete 
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 06 · Đập Dập Tách Sợi
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Đập Dập Làm Tơi Xơ Sợi
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Nhấp trực tiếp vào cối đá để nện chày gỗ. Quan sát các cọng cỏ phân bố đều khắp lòng cối dần dẹp mỏng, tơi xơ và chuyển thành dạng mạng xơ thực vật.
         </p>
       </div>

@@ -152,13 +152,13 @@ export const Stage9DeckleForm: React.FC<Stage9Props> = ({
 
       {/* Header */}
       <div className="text-center mb-3">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 09 · Trọng Tâm Workshop
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Seo Giấy Bằng Khuôn Tre & Màn Lưới
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           <strong>Nhấn & giữ chuột trái</strong> để nhúng khuôn sâu dần vào bể nước. <strong>Nhả chuột</strong> để nhấc khuôn lên. <strong>Click chuột phải</strong> để hủy và nhúng lại.
         </p>
       </div>

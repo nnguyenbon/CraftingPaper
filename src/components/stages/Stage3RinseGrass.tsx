@@ -106,13 +106,13 @@ export const Stage3RinseGrass: React.FC<Stage3Props> = ({ materials, onComplete 
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 03 · Rửa Cỏ
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Rửa Sạch Bụi Bẩn & Tạp Chất
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Nhấn giữ chuột/chạm và <strong>di chuyển theo vòng tròn thuận chiều kim đồng hồ</strong> trong chậu để dòng nước cuốn sạch cặn bẩn bám trên thớ cỏ.
         </p>
       </div>

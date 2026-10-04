@@ -125,13 +125,13 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
     <div className="relative w-full max-w-5xl mx-auto flex flex-col items-center select-none pb-12">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 12 · Tác Phẩm Hoàn Thành
         </div>
-        <h2 className="text-2xl md:text-4xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-4xl font-serif text-white font-medium">
           Thành Phẩm Giấy Cỏ Thủ Công
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-2xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-2xl mx-auto">
           Chính sự kết hợp nguyên liệu và kỹ năng thao tác của bạn đã nhào nặn nên đặc tính độc bản
           của tờ giấy này.
         </p>

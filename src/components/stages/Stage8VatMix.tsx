@@ -182,13 +182,13 @@ export const Stage8VatMix: React.FC<Stage8Props> = ({
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 08 · Pha Bể Giấy
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Pha Bột & Hồ Vào Bể Seo
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Click trực tiếp vào từng thau nguyên liệu để cho vào bể, chọn định lượng hồ tinh bột, sau đó <strong>giữ chuột và di chuyển theo hình số 8 (∞)</strong> để khuấy đều.
         </p>
       </div>

@@ -137,13 +137,13 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 11 · Trang Trí Thủ Công
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Trang Trí Tờ Giấy Cỏ
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Chọn một phong cách hoàn thiện để lưu dấu nét nghệ thuật truyền thống lên bề mặt tờ giấy của bạn.
         </p>
       </div>

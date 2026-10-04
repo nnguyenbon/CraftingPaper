@@ -103,13 +103,13 @@ export const Stage7GrindPulp: React.FC<Stage7Props> = ({
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 07 · Nghiền Bột Giấy
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Nghiền Bột Bằng Cối Đá
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Click vào thau xơ cỏ để nạp vào cối. Số lần xoay cối quyết định mức độ nghiền (Thô / Vừa / Mịn) và kết cấu giấy thành phẩm.
         </p>
       </div>

@@ -41,9 +41,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         <span className="font-serif text-lg md:text-xl font-bold tracking-tight text-amber-100 whitespace-nowrap">
           Xưởng Giấy Cỏ
         </span>
-        <span className="hidden sm:inline-block text-xs text-amber-300/60 font-serif">
-          · Workshop Thủ Công Việt Nam
-        </span>
       </div>
 
       {/* Zone 2: Progress indicator */}

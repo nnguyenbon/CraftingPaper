@@ -130,13 +130,13 @@ export const Stage5BoilLye: React.FC<Stage5Props> = ({ materials, onComplete }) 
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 05 · Nấu Kiềm Tự Nhiên
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Nấu Cỏ Với Nước Tro Bếp
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Click vào thau cỏ và thau nước tro để cho vào nồi gang, sau đó <strong>giữ chuột và di chuyển theo chiều kim đồng hồ</strong> để khuấy đều.
         </p>
       </div>

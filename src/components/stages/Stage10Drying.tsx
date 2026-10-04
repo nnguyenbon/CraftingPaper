@@ -76,13 +76,13 @@ export const Stage10Drying: React.FC<Stage10Props> = ({ materials, onComplete })
 
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 10 · Dán Ván & Phơi Khô
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Dán Ván & Ép Phơi Giấy
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Nhấp vào khuôn để ép dán màng giấy ướt lên ván gỗ thông, dùng <strong>miếng bọt biển</strong> dặm đều hút bớt nước rồi hong khô dưới nắng ấm.
         </p>
       </div>

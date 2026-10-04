@@ -2,7 +2,7 @@ import React from 'react';
 
 export const WorkshopEnvironment: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <div className="relative min-h-screen w-full bg-[#1b1510] text-stone-800 flex flex-col items-center overflow-x-hidden selection:bg-amber-800 selection:text-amber-100">
+    <div className="relative min-h-screen w-full bg-[#1b1510] text-stone-200 flex flex-col items-center overflow-x-hidden selection:bg-amber-800 selection:text-amber-100">
       {/* Ambient Workshop Background Lighting & Texture */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Soft morning sunbeams streaming down from window slats */}

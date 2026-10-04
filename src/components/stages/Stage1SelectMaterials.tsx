@@ -117,13 +117,13 @@ export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
     <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
+        <div className="text-xs uppercase tracking-widest text-white/80 font-semibold mb-1">
           Công đoạn 01 · Khởi Đầu Workshop
         </div>
-        <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
+        <h2 className="text-2xl md:text-3xl font-serif text-white font-medium">
           Chọn Cỏ & Nguyên Liệu Phối
         </h2>
-        <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
+        <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Chọn loại cỏ làm nền chính và phối thêm nguyên liệu thảo mộc truyền thống để quyết định màu sắc, độ dai và cấu trúc sợi của tờ giấy.
         </p>
       </div>
