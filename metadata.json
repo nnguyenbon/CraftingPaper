@@ -1,0 +1,6 @@
+{
+  "name": "Nghệ Nhân Giấy Cỏ - Handmade Grass Paper Workshop",
+  "description": "Game mô phỏng góc nhìn thứ nhất trải nghiệm làm giấy thủ công truyền thống từ cỏ và thực vật tự nhiên.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
