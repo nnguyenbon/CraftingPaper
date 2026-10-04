@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
 import { sound } from '../../utils/audio';
 import { ArrowRight, Scissors } from 'lucide-react';
-import { FirstPersonHands } from '../FirstPersonHands';
+import { ActionIndicator } from '../ActionIndicator';
+import { MaterialConfig } from '../../types/paper';
 
 interface Stage2Props {
+  materials: MaterialConfig;
   onComplete: (accuracy: number) => void;
 }
 
-export const Stage2CutGrass: React.FC<Stage2Props> = ({ onComplete }) => {
-  const [cuts, setCuts] = useState<number[]>([]); // cut indices
-  const [isSwinging, setIsSwinging] = useState(false);
-  const totalCutsNeeded = 6;
+export const Stage2CutGrass: React.FC<Stage2Props> = ({ materials, onComplete }) => {
+  const [cuts, setCuts] = useState<number[]>([]);
+  const [activeCutIndex, setActiveCutIndex] = useState<number | null>(null);
+  const totalCutsNeeded = 5;
 
   const handleCut = (index: number) => {
     if (cuts.includes(index)) return;
     sound.playSnip();
-    setIsSwinging(true);
-    setTimeout(() => setIsSwinging(false), 160);
+    setActiveCutIndex(index);
+    setTimeout(() => setActiveCutIndex(null), 200);
 
     const newCuts = [...cuts, index];
     setCuts(newCuts);
@@ -24,78 +26,120 @@ export const Stage2CutGrass: React.FC<Stage2Props> = ({ onComplete }) => {
     if (newCuts.length >= totalCutsNeeded) {
       setTimeout(() => {
         onComplete(95);
-      }, 500);
+      }, 600);
     }
   };
 
   const progress = Math.min(100, Math.round((cuts.length / totalCutsNeeded) * 100));
+  const isPandan = materials.grassType === 'pandan';
+
+  // 10 distinct, slender, long grass stalks across the board
+  const stalkStyles = [
+    { top: 28, delay: 0 },
+    { top: 38, delay: 0.1 },
+    { top: 48, delay: 0.05 },
+    { top: 58, delay: 0.15 },
+    { top: 68, delay: 0.02 },
+    { top: 78, delay: 0.18 },
+    { top: 88, delay: 0.08 },
+    { top: 98, delay: 0.12 },
+    { top: 108, delay: 0.04 },
+    { top: 118, delay: 0.16 },
+  ];
 
   return (
     <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center select-none">
-      {/* First Person Hands with Knife */}
-      <FirstPersonHands tool="knife" isActing={isSwinging} />
+      {/* 1 Hollow Circle Indicator indicating single-hand cutting position */}
+      {activeCutIndex !== null && (
+        <ActionIndicator
+          count={1}
+          isActing={true}
+          offsetX={(activeCutIndex - 2) * 90}
+          offsetY={0}
+        />
+      )}
 
       {/* Header */}
       <div className="text-center mb-4">
         <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
-          Công đoạn 02 · Chuẩn Bị Sợi
+          Công đoạn 02 · Cắt Cỏ
         </div>
         <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
           Cắt Cỏ Thành Từng Đoạn
         </h2>
         <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
-          Nhấp hoặc chạm dọc theo các đường vạch đứt trên thớt để hạ dao cắt các nhánh cỏ tươi thành từng đoạn 5–7cm.
+          Nhấp dọc theo 5 đường cắt trên thớt để hạ dao cắt 10 cọng {isPandan ? 'cỏ lá dứa' : 'cỏ lá sả'} mảnh dài thành từng đoạn ngắn chuẩn bị rửa sạch.
         </p>
       </div>
 
       {/* Workspace Cutting Board */}
-      <div className="w-full relative bg-amber-950/20 rounded-3xl p-6 md:p-8 shadow-2xl border border-amber-900/20 overflow-hidden">
-        {/* Wooden Workbench Surface Texture */}
-        <div className="w-full h-80 relative rounded-2xl bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 shadow-inner border-4 border-amber-950/60 flex items-center justify-center p-6">
-          {/* Wood grain ring lines */}
+      <div className="w-full bg-stone-100 rounded-3xl p-6 md:p-8 shadow-xl border border-stone-200">
+        <div className="w-full h-80 relative rounded-2xl bg-gradient-to-r from-amber-900 via-amber-800 to-amber-950 shadow-2xl border-4 border-amber-950 flex items-center justify-center p-6 overflow-hidden">
+          {/* Wood grain lines */}
           <div className="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-300 via-transparent to-transparent"></div>
 
-          {/* Grass Bundles lying horizontally across board */}
-          <div className="relative w-full max-w-2xl h-36 flex items-center justify-between px-4">
-            {/* Background grass leaves */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-full h-24 bg-gradient-to-r from-emerald-700 via-emerald-600 to-lime-600 rounded-full blur-[1px] opacity-85 shadow-lg"></div>
-              {/* Detailed grass leaf lines */}
-              <div className="absolute inset-x-2 h-1 bg-emerald-300/40 rounded-full top-8"></div>
-              <div className="absolute inset-x-6 h-1 bg-lime-200/50 rounded-full top-14"></div>
-              <div className="absolute inset-x-4 h-1 bg-emerald-900/30 rounded-full top-20"></div>
+          {/* Cutting Area Container */}
+          <div className="relative w-full max-w-2xl h-56 flex items-center justify-between px-6">
+            {/* 10 Slender, Long, Thin Grass Stalks */}
+            <div className="absolute inset-x-8 inset-y-6 flex flex-col justify-between pointer-events-none">
+              {stalkStyles.map((stalk, sIdx) => (
+                <div
+                  key={sIdx}
+                  className="relative w-full h-1.5 flex items-center"
+                >
+                  {/* Each stalk is broken up by the 5 cuts into 6 distinct segments */}
+                  {Array.from({ length: 6 }).map((_, segIdx) => {
+                    const isLeftCut = cuts.includes(segIdx - 1);
+                    const isRightCut = cuts.includes(segIdx);
+                    return (
+                      <div
+                        key={segIdx}
+                        style={{
+                          width: `${100 / 6}%`,
+                          transform: isLeftCut || isRightCut ? `translateY(${((sIdx + segIdx) % 2 === 0 ? 1 : -1) * 2}px)` : 'none',
+                        }}
+                        className={`h-full transition-all duration-300 ${
+                          isLeftCut ? 'ml-1.5' : ''
+                        } ${
+                          isPandan
+                            ? 'bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-800'
+                            : 'bg-gradient-to-r from-emerald-500 via-lime-500 to-emerald-600'
+                        } rounded-xs shadow-xs border-y border-emerald-900/30`}
+                      ></div>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
 
-            {/* Cut Segments & Target Cut Lines */}
+            {/* 5 Distinct Cut Line Targets - completely visible and unobstructed */}
             {Array.from({ length: totalCutsNeeded }).map((_, idx) => {
               const isCut = cuts.includes(idx);
               return (
                 <button
                   key={idx}
                   onClick={() => handleCut(idx)}
-                  className={`relative z-10 w-12 h-32 flex flex-col items-center justify-center transition-all cursor-pointer group ${
-                    isCut ? 'opacity-80' : 'hover:scale-105'
+                  className={`relative z-10 w-12 h-44 flex flex-col items-center justify-center transition-all cursor-pointer group ${
+                    isCut ? 'opacity-85' : 'hover:scale-105'
                   }`}
-                  aria-label={`Vết cắt số ${idx + 1}`}
+                  aria-label={`Đường cắt số ${idx + 1}`}
                 >
-                  {/* Guideline line */}
+                  {/* Guideline bar */}
                   <div
-                    className={`w-1 h-28 rounded-full transition-all duration-300 ${
+                    className={`w-1 h-36 rounded-full transition-all duration-200 ${
                       isCut
-                        ? 'bg-amber-950 shadow-inner translate-y-1'
+                        ? 'bg-amber-950/90 shadow-inner'
                         : 'bg-white/80 group-hover:bg-amber-300 shadow-md border-dashed border-stone-800'
                     }`}
                   ></div>
 
-                  {/* Cut Marker Indicator */}
-                  {!isCut && (
-                    <div className="absolute top-2 w-7 h-7 rounded-full bg-amber-100 text-stone-800 border border-amber-400 flex items-center justify-center shadow-md animate-bounce text-xs font-bold">
+                  {/* Cut marker indicator */}
+                  {!isCut ? (
+                    <div className="absolute top-2 w-7 h-7 rounded-full border-2 border-dashed border-amber-300 bg-stone-900/80 text-amber-200 flex items-center justify-center shadow-lg group-hover:border-amber-400 group-hover:scale-110 transition-transform">
                       <Scissors className="w-3.5 h-3.5" />
                     </div>
-                  )}
-
-                  {isCut && (
-                    <div className="absolute -top-1 text-xs text-amber-200 font-serif">
+                  ) : (
+                    <div className="absolute -top-1 w-5 h-5 rounded-full bg-emerald-700 text-white text-[11px] font-bold flex items-center justify-center shadow-sm">
                       ✓
                     </div>
                   )}
@@ -105,25 +149,25 @@ export const Stage2CutGrass: React.FC<Stage2Props> = ({ onComplete }) => {
           </div>
         </div>
 
-        {/* Progress & Quick Manual Bypass */}
-        <div className="mt-4 flex flex-col md:flex-row items-center justify-between gap-3 text-stone-700 text-sm">
+        {/* Bottom Status & Skip */}
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-stone-700 text-xs">
           <div className="flex items-center gap-3">
-            <span className="font-medium">Tiến độ cắt cỏ:</span>
-            <div className="w-40 h-2.5 bg-stone-300 rounded-full overflow-hidden">
+            <span className="font-semibold text-stone-900">Tiến độ cắt cỏ:</span>
+            <div className="w-44 h-2 bg-stone-300 rounded-full overflow-hidden">
               <div
                 style={{ width: `${progress}%` }}
                 className="h-full bg-emerald-600 transition-all duration-300"
               ></div>
             </div>
-            <span className="text-xs text-stone-500 font-mono">{cuts.length}/{totalCutsNeeded} nhát</span>
+            <span className="font-mono text-stone-600">{cuts.length}/{totalCutsNeeded} nhát cắt</span>
           </div>
 
           <button
             onClick={() => {
               cuts.length === 0 && sound.playSnip();
-              onComplete(90);
+              onComplete(92);
             }}
-            className="text-xs text-stone-600 hover:text-stone-900 underline flex items-center gap-1 cursor-pointer"
+            className="text-stone-600 hover:text-stone-900 underline flex items-center gap-1 cursor-pointer"
           >
             <span>Bỏ qua cắt nhanh</span>
             <ArrowRight className="w-3.5 h-3.5" />

@@ -1,58 +1,132 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { sound } from '../../utils/audio';
-import { ArrowRight, Flame, Sparkles } from 'lucide-react';
-import { FirstPersonHands } from '../FirstPersonHands';
+import { ArrowRight, Flame, RotateCw, CheckCircle2 } from 'lucide-react';
+import { ActionIndicator } from '../ActionIndicator';
+import { MaterialConfig } from '../../types/paper';
 
 interface Stage5Props {
+  materials: MaterialConfig;
   onComplete: () => void;
 }
 
-export const Stage5BoilLye: React.FC<Stage5Props> = ({ onComplete }) => {
-  const [hasAddedMaterial, setHasAddedMaterial] = useState(false);
+export const Stage5BoilLye: React.FC<Stage5Props> = ({ materials, onComplete }) => {
+  const [hasAddedGrass, setHasAddedGrass] = useState(false);
   const [hasAddedLye, setHasAddedLye] = useState(false);
+  const [stirProgress, setStirProgress] = useState(0); // 0-100%
   const [isStirring, setIsStirring] = useState(false);
-  const [boilProgress, setBoilProgress] = useState(0);
+  const [stirIndicatorPos, setStirIndicatorPos] = useState({ x: 0, y: 0 });
 
-  // Play boiling bubble sound periodically when cooking
+  const potRef = useRef<HTMLDivElement | null>(null);
+  const lastAngle = useRef<number | null>(null);
+  const accumulatedAngle = useRef<number>(0);
+  const soundCooldown = useRef<number>(0);
+
+  const isPandan = materials.grassType === 'pandan';
+
+  // 50 slender, thin, long grass stalks in the basin
+  const grassStalks = useRef(
+    Array.from({ length: 50 }).map((_, i) => ({
+      angle: (i * 360) / 50 + (Math.random() * 10 - 5),
+      dist: 12 + (i % 6) * 7,
+      length: 16 + (i % 5) * 6,
+      rot: Math.random() * 360,
+    }))
+  ).current;
+
+  // Boiling bubble sound effect while cooking and stirring
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (hasAddedMaterial && hasAddedLye && boilProgress < 100) {
+    if (hasAddedGrass && hasAddedLye && stirProgress < 100) {
       interval = setInterval(() => {
         sound.playBoilBubble();
-      }, 700);
+      }, 900);
     }
     return () => clearInterval(interval);
-  }, [hasAddedMaterial, hasAddedLye, boilProgress]);
+  }, [hasAddedGrass, hasAddedLye, stirProgress]);
 
-  const handleAddMaterial = () => {
+  const handlePourGrass = () => {
+    if (hasAddedGrass) return;
     sound.playTap();
-    setHasAddedMaterial(true);
+    setHasAddedGrass(true);
   };
 
-  const handleAddLye = () => {
+  const handlePourLye = () => {
+    if (hasAddedLye) return;
     sound.playWaterSplash();
     setHasAddedLye(true);
   };
 
-  const handleStir = () => {
-    sound.playWaterSplash();
-    sound.playBoilBubble();
+  // Clockwise pointer movement inside pot
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!hasAddedGrass || !hasAddedLye) return;
     setIsStirring(true);
-    setTimeout(() => setIsStirring(false), 300);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    lastAngle.current = null;
+  };
 
-    const next = Math.min(100, boilProgress + 20);
-    setBoilProgress(next);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isStirring || !potRef.current) return;
 
-    if (next >= 100) {
-      setTimeout(() => {
-        onComplete();
-      }, 500);
+    const rect = potRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+
+    setStirIndicatorPos({ x: dx * 0.65, y: dy * 0.65 });
+
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+    if (lastAngle.current !== null) {
+      let delta = angle - lastAngle.current;
+      if (delta < -180) delta += 360;
+      if (delta > 180) delta -= 360;
+
+      // Clockwise rotation
+      if (delta > 0) {
+        accumulatedAngle.current += delta;
+        const targetDegrees = 360 * 3.5;
+        const next = Math.min(100, Math.round((accumulatedAngle.current / targetDegrees) * 100));
+        setStirProgress(next);
+
+        const now = Date.now();
+        if (now - soundCooldown.current > 350) {
+          sound.playWaterSplash();
+          soundCooldown.current = now;
+        }
+
+        if (next >= 100) {
+          setIsStirring(false);
+          sound.playZenChime();
+          setTimeout(() => onComplete(), 700);
+        }
+      }
+    }
+    lastAngle.current = angle;
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsStirring(false);
+    lastAngle.current = null;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // safe ignore
     }
   };
 
   return (
     <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center select-none">
-      <FirstPersonHands tool="stir" isActing={isStirring} />
+      {/* 1 Hollow Circle Indicator tracking stirring position */}
+      {isStirring && (
+        <ActionIndicator
+          count={1}
+          isActing={true}
+          label="Khuấy thuận chiều kim đồng hồ"
+          offsetX={stirIndicatorPos.x}
+          offsetY={stirIndicatorPos.y}
+        />
+      )}
 
       {/* Header */}
       <div className="text-center mb-4">
@@ -63,116 +137,160 @@ export const Stage5BoilLye: React.FC<Stage5Props> = ({ onComplete }) => {
           Nấu Cỏ Với Nước Tro Bếp
         </h2>
         <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
-          Nước tro bếp giàu kiềm tự nhiên (K₂CO₃) giúp bẻ gãy chất keo lignin trong cỏ, giải phóng các bó sợi cellulose mềm mại.
+          Click vào thau cỏ và thau nước tro để cho vào nồi gang, sau đó <strong>giữ chuột và di chuyển theo chiều kim đồng hồ</strong> để khuấy đều.
         </p>
       </div>
 
-      {/* Hearth & Cauldron Interactive Area */}
-      <div className="w-full relative bg-stone-900 rounded-3xl p-6 md:p-8 shadow-2xl border border-stone-800 overflow-hidden flex flex-col items-center">
-        {/* Hearth Fire Background Glow */}
-        <div className="absolute inset-0 bg-gradient-to-t from-orange-950/60 via-amber-950/20 to-transparent pointer-events-none"></div>
-
-        {/* Large Cast-Iron Pot */}
-        <div className="relative w-72 h-72 md:w-88 md:h-88 rounded-full bg-gradient-to-b from-stone-800 via-stone-900 to-stone-950 border-8 border-stone-700 shadow-2xl flex items-center justify-center overflow-hidden">
-          {/* Iron Pot Rim Highlight */}
-          <div className="absolute inset-2 rounded-full border border-stone-600/30 pointer-events-none"></div>
-
-          {/* Liquid Inside */}
+      {/* Workspace */}
+      <div className="w-full bg-stone-900 rounded-3xl p-6 md:p-8 shadow-2xl border border-stone-800 flex flex-col items-center">
+        {/* Hearth Scene: Left basin (grass) - Center Cauldron - Right basin (lye water) */}
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-6 my-2">
+          {/* 1. Left Basin: Thau chứa 50 cọng cỏ đã băm */}
           <div
-            className={`relative w-56 h-56 md:w-68 md:h-68 rounded-full transition-colors duration-700 flex items-center justify-center overflow-hidden ${
-              !hasAddedLye
-                ? 'bg-stone-950'
-                : boilProgress > 50
-                ? 'bg-gradient-to-b from-amber-800 via-amber-900 to-amber-950'
-                : 'bg-gradient-to-b from-stone-700 via-amber-950 to-stone-900'
+            onClick={handlePourGrass}
+            className={`w-44 h-44 rounded-full border-4 flex flex-col items-center justify-center p-3 transition-all cursor-pointer relative shadow-lg ${
+              hasAddedGrass
+                ? 'border-stone-700 bg-stone-900/60 opacity-50 cursor-default'
+                : 'border-emerald-600 bg-stone-800 hover:scale-105 hover:border-emerald-400'
             }`}
           >
-            {/* Added Material floating in pot */}
-            {hasAddedMaterial && (
-              <div
-                className={`relative w-44 h-44 rounded-full flex flex-wrap items-center justify-center gap-1 transition-all duration-500 ${
-                  isStirring ? 'rotate-45 scale-90' : ''
-                }`}
-              >
-                {Array.from({ length: 24 }).map((_, i) => (
+            {/* 50 grass elements inside basin */}
+            {!hasAddedGrass ? (
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                {grassStalks.map((stalk, idx) => (
                   <div
-                    key={i}
+                    key={idx}
                     style={{
-                      transform: `rotate(${i * 35}deg)`,
+                      width: `${stalk.length}px`,
+                      height: '1.5px',
+                      transform: `rotate(${stalk.angle}deg) translate(${stalk.dist}px) rotate(${stalk.rot}deg)`,
                     }}
-                    className={`w-6 h-2 rounded-full transition-colors duration-700 ${
-                      boilProgress > 60 ? 'bg-amber-600/90' : 'bg-emerald-600/80'
+                    className={`absolute rounded-full ${
+                      isPandan ? 'bg-emerald-600' : 'bg-lime-400'
                     }`}
                   ></div>
                 ))}
+                <div className="absolute -bottom-2 bg-stone-950/80 text-emerald-200 text-[10px] font-mono px-2 py-0.5 rounded-full border border-emerald-500/40">
+                  Thau cỏ (50 cọng)
+                </div>
+              </div>
+            ) : (
+              <div className="text-stone-400 text-xs font-serif flex items-center gap-1">
+                <span>✓ Đã đổ vào nồi</span>
               </div>
             )}
+          </div>
 
-            {/* Boiling Steam & Bubbles */}
-            {hasAddedMaterial && hasAddedLye && (
-              <>
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  {/* Steam haze */}
-                  <div className="w-48 h-48 bg-white/10 rounded-full blur-xl animate-pulse"></div>
-                  {/* Bubble rings */}
-                  <div className="absolute top-10 left-12 w-6 h-6 rounded-full border border-amber-300/60 bg-amber-400/20 animate-ping"></div>
-                  <div className="absolute bottom-12 right-14 w-8 h-8 rounded-full border border-amber-300/60 bg-amber-400/20 animate-ping delay-150"></div>
-                  <div className="absolute top-20 right-10 w-5 h-5 rounded-full border border-amber-300/60 bg-amber-400/20 animate-ping delay-300"></div>
+          {/* 2. Center: Large Cast-Iron Cauldron */}
+          <div
+            ref={potRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className={`relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-b from-stone-850 via-stone-900 to-stone-950 border-8 border-stone-700 shadow-2xl flex items-center justify-center overflow-hidden touch-none ${
+              hasAddedGrass && hasAddedLye ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+            }`}
+          >
+            {/* Liquid & Material inside pot */}
+            <div
+              className={`relative w-52 h-52 md:w-64 md:h-64 rounded-full transition-colors duration-500 flex items-center justify-center overflow-hidden ${
+                !hasAddedLye
+                  ? 'bg-stone-950'
+                  : stirProgress > 50
+                  ? 'bg-gradient-to-b from-amber-800 via-amber-900 to-amber-950'
+                  : 'bg-gradient-to-b from-stone-700 via-amber-950 to-stone-900'
+              }`}
+            >
+              {/* Clockwise swirl guide outline when ready to stir */}
+              {hasAddedGrass && hasAddedLye && stirProgress < 100 && (
+                <div className="absolute inset-4 rounded-full border border-dashed border-amber-300/30 flex items-center justify-center pointer-events-none">
+                  <RotateCw className="w-6 h-6 text-amber-300/40 animate-spin [animation-duration:8s]" />
                 </div>
-              </>
-            )}
+              )}
 
-            {/* Prompt Text inside pot if empty */}
-            {!hasAddedMaterial && (
-              <div className="text-stone-400 text-xs text-center font-serif px-4">
-                Nồi gang đang sẵn sàng trên bếp lửa
+              {/* Added grass inside pot (50 stalks clearly displayed and multiplying) */}
+              {hasAddedGrass && (
+                <div
+                  style={{
+                    transform: `rotate(${accumulatedAngle.current * 0.7}deg)`,
+                  }}
+                  className="relative w-44 h-44 flex items-center justify-center pointer-events-none"
+                >
+                  {grassStalks.map((stalk, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        width: `${stalk.length}px`,
+                        height: '1.5px',
+                        transform: `rotate(${stalk.angle}deg) translate(${stalk.dist * 0.8}px) rotate(${stalk.rot}deg)`,
+                      }}
+                      className={`absolute rounded-full transition-colors duration-500 ${
+                        stirProgress > 60
+                          ? 'bg-amber-500/80'
+                          : isPandan
+                          ? 'bg-emerald-600/90'
+                          : 'bg-lime-400/90'
+                      }`}
+                    ></div>
+                  ))}
+                </div>
+              )}
+
+              {/* Boiling steam & bubbles */}
+              {hasAddedGrass && hasAddedLye && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-48 h-48 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+                  <div className="absolute top-10 left-10 w-5 h-5 rounded-full border border-amber-300/60 bg-amber-400/20 animate-ping"></div>
+                  <div className="absolute bottom-12 right-12 w-6 h-6 rounded-full border border-amber-300/60 bg-amber-400/20 animate-ping delay-200"></div>
+                </div>
+              )}
+
+              {/* Prompt if empty */}
+              {!hasAddedGrass && !hasAddedLye && (
+                <div className="text-stone-400 text-xs text-center font-serif px-4">
+                  Nồi gang đang trống trên bếp củi
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Right Basin: Thau chứa nước tro bếp */}
+          <div
+            onClick={handlePourLye}
+            className={`w-44 h-44 rounded-full border-4 flex flex-col items-center justify-center p-3 transition-all cursor-pointer relative shadow-lg ${
+              hasAddedLye
+                ? 'border-stone-700 bg-stone-900/60 opacity-50 cursor-default'
+                : 'border-amber-600 bg-stone-800 hover:scale-105 hover:border-amber-400'
+            }`}
+          >
+            {!hasAddedLye ? (
+              <div className="relative w-28 h-28 rounded-full bg-gradient-to-b from-amber-700 to-amber-900 flex items-center justify-center border border-amber-500/50 shadow-inner">
+                <div className="w-16 h-16 rounded-full border border-amber-400/30 animate-pulse"></div>
+                <div className="absolute -bottom-2 bg-stone-950/80 text-amber-200 text-[10px] font-mono px-2 py-0.5 rounded-full border border-amber-500/40">
+                  Thau nước tro
+                </div>
+              </div>
+            ) : (
+              <div className="text-stone-400 text-xs font-serif flex items-center gap-1">
+                <span>✓ Đã châm nước tro</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Action Controls Step by Step */}
-        <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3">
-          {!hasAddedMaterial && (
-            <button
-              onClick={handleAddMaterial}
-              className="flex items-center gap-2 bg-amber-800 hover:bg-amber-700 text-amber-100 px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg cursor-pointer animate-pulse"
-            >
-              <span>1. Cho cỏ vào nồi</span>
-            </button>
-          )}
-
-          {hasAddedMaterial && !hasAddedLye && (
-            <button
-              onClick={handleAddLye}
-              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-stone-900 px-5 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg cursor-pointer animate-pulse"
-            >
-              <span>2. Thêm gáo nước tro</span>
-            </button>
-          )}
-
-          {hasAddedMaterial && hasAddedLye && (
-            <button
-              onClick={handleStir}
-              className="flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white px-6 py-2.5 rounded-xl font-medium text-sm transition-all shadow-lg cursor-pointer active:scale-95"
-            >
-              <Flame className="w-4 h-4 animate-bounce text-yellow-300" />
-              <span>Khuấy đảo nồi nấu ({boilProgress}%)</span>
-            </button>
-          )}
-        </div>
-
-        {/* Progress & Fast Forward */}
-        <div className="mt-6 flex flex-col md:flex-row items-center justify-between w-full max-w-md gap-3 text-stone-300 text-sm">
+        {/* Action Status Bar */}
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-between w-full max-w-md gap-3 text-stone-300 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-xs">Độ mềm nhừ của sợi:</span>
+            <Flame className="w-4 h-4 text-orange-400" />
+            <span>Độ chín nhừ của sợi:</span>
             <div className="w-36 h-2 bg-stone-800 rounded-full overflow-hidden">
               <div
-                style={{ width: `${boilProgress}%` }}
-                className="h-full bg-orange-500 transition-all duration-300"
+                style={{ width: `${stirProgress}%` }}
+                className="h-full bg-orange-500 transition-all duration-150"
               ></div>
             </div>
-            <span className="text-xs text-stone-400 font-mono">{boilProgress}%</span>
+            <span className="font-mono text-stone-400">{stirProgress}%</span>
           </div>
 
           <button
@@ -180,7 +298,7 @@ export const Stage5BoilLye: React.FC<Stage5Props> = ({ onComplete }) => {
               sound.playBoilBubble();
               onComplete();
             }}
-            className="text-xs text-stone-400 hover:text-amber-300 underline flex items-center gap-1 cursor-pointer"
+            className="text-stone-400 hover:text-amber-300 underline flex items-center gap-1 cursor-pointer"
           >
             <span>Bỏ qua nấu nhanh</span>
             <ArrowRight className="w-3.5 h-3.5" />

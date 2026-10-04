@@ -5,13 +5,10 @@ import {
   RotateCcw,
   Sparkles,
   Sun,
-  Eye,
   PenTool,
   BookmarkPlus,
   CheckCircle,
-  Share2,
 } from 'lucide-react';
-import { FirstPersonHands } from '../FirstPersonHands';
 
 interface Stage12Props {
   materials: MaterialConfig;
@@ -29,11 +26,10 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
   onSaveToBook,
 }) => {
   const [isBacklight, setIsBacklight] = useState(false);
-  const [tiltAngle, setTiltAngle] = useState(0); // -15 to +15 deg
+  const [tiltAngle, setTiltAngle] = useState(0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  // Canvas for drawing calligraphy
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPainting = useRef(false);
 
@@ -81,7 +77,6 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
     ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    // Deep traditional pine soot black ink
     ctx.strokeStyle = '#1c1917';
 
     ctx.lineTo(x, y);
@@ -116,7 +111,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
         month: '2-digit',
         year: 'numeric',
       }),
-      name: `Giấy Cỏ · ${specs.colorName}`,
+      name: `Giấy ${materials.grassType === 'pandan' ? 'Lá Dứa' : 'Lá Sả'} · ${specs.colorName}`,
       materials,
       stats,
       specs,
@@ -128,9 +123,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
 
   return (
     <div className="relative w-full max-w-5xl mx-auto flex flex-col items-center select-none pb-12">
-      <FirstPersonHands tool="holding_paper" isActing={false} />
-
-      {/* Workshop Header */}
+      {/* Header */}
       <div className="text-center mb-6">
         <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
           Công đoạn 12 · Tác Phẩm Hoàn Thành
@@ -139,8 +132,8 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
           Thành Phẩm Giấy Cỏ Thủ Công
         </h2>
         <p className="text-sm text-stone-600 mt-1 max-w-2xl mx-auto">
-          Chính bàn tay và sự lựa chọn của bạn trong từng công đoạn đã tạo nên những đặc tính độc bản
-          cho tờ giấy thảo mộc này.
+          Chính sự kết hợp nguyên liệu và kỹ năng thao tác của bạn đã nhào nặn nên đặc tính độc bản
+          của tờ giấy này.
         </p>
       </div>
 
@@ -148,8 +141,8 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Interactive Close-up Paper Viewer (7 Cols) */}
         <div className="lg:col-span-7 flex flex-col items-center">
-          {/* Controls Bar for Paper Inspection */}
-          <div className="w-full flex items-center justify-between bg-white/90 rounded-2xl p-2.5 shadow-sm border border-stone-200 mb-3 text-xs">
+          {/* Controls Bar */}
+          <div className="w-full flex items-center justify-between bg-white rounded-2xl p-2.5 shadow-sm border border-stone-200 mb-3 text-xs">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => {
@@ -193,7 +186,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
           </div>
 
           {/* The Paper Sheet Presentation Frame */}
-          <div className="w-full h-96 md:h-[460px] bg-gradient-to-b from-stone-900 via-stone-800 to-stone-950 rounded-3xl p-6 shadow-2xl border-4 border-stone-800 flex items-center justify-center relative overflow-hidden">
+          <div className="w-full h-96 md:h-[460px] bg-gradient-to-b from-stone-900 via-stone-850 to-stone-950 rounded-3xl p-6 shadow-2xl border-4 border-stone-800 flex items-center justify-center relative overflow-hidden">
             {/* Backlight Glow when toggled */}
             {isBacklight && (
               <div className="absolute inset-0 bg-radial from-amber-200/40 via-yellow-100/20 to-transparent pointer-events-none animate-pulse"></div>
@@ -213,8 +206,8 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
               }}
               className="relative w-72 h-88 md:w-84 md:h-[400px] rounded-sm p-6 flex flex-col justify-between transition-all duration-300 border border-stone-400/30 overflow-hidden"
             >
-              {/* Natural Raw Deckle Edge Roughness effect */}
-              <div className="absolute inset-0 border-2 border-dashed border-stone-400/20 pointer-events-none"></div>
+              {/* Deckle raw edge line */}
+              <div className="absolute inset-0 border border-dashed border-stone-400/20 pointer-events-none"></div>
 
               {/* Natural Plant Fiber Grid & Organic Flecks */}
               <div
@@ -223,27 +216,79 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                 }}
                 className="absolute inset-0 pointer-events-none"
               >
-                {/* Embedded fibers */}
-                {Array.from({ length: 70 }).map((_, i) => (
+                {Array.from({ length: 65 }).map((_, i) => (
                   <div
                     key={i}
                     style={{
                       left: `${(i * 17) % 95}%`,
                       top: `${(i * 23) % 92}%`,
-                      width: `${14 + (i % 6) * 5}px`,
-                      height: `${1 + (i % 3)}px`,
+                      width: `${12 + (i % 6) * 5}px`,
+                      height: `${1 + (i % 2) * 0.8}px`,
                       transform: `rotate(${(i * 61) % 180}deg)`,
                     }}
                     className={`absolute rounded-full ${
-                      i % 5 === 0
+                      i % 4 === 0
                         ? 'bg-amber-900/40'
-                        : i % 3 === 0
-                        ? 'bg-emerald-900/30'
-                        : 'bg-stone-700/25'
+                        : materials.grassType === 'pandan'
+                        ? 'bg-emerald-900/35'
+                        : 'bg-emerald-800/25'
                     }`}
                   ></div>
                 ))}
               </div>
+
+              {/* Water Marbling SVG Layer (Visible and clear on final sheet) */}
+              {stats.decorationType === 'water_marbling' && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-60">
+                  <svg className="w-full h-full" viewBox="0 0 400 400" preserveAspectRatio="none">
+                    <path
+                      d="M-20,80 C80,30 160,130 260,70 C340,10 420,90 440,60"
+                      fill="none"
+                      stroke="#854d0e"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M-10,160 C100,100 180,210 280,140 C360,80 410,160 430,130"
+                      fill="none"
+                      stroke="#1e3a8a"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M-30,240 C70,190 170,290 270,220 C350,170 410,240 440,210"
+                      fill="none"
+                      stroke="#78350f"
+                      strokeWidth="9"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M-20,320 C90,260 190,360 290,290 C360,250 400,320 430,300"
+                      fill="none"
+                      stroke="#047857"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              )}
+
+              {/* Natural Specks */}
+              {stats.decorationType === 'natural_specks' && (
+                <div className="absolute inset-0 pointer-events-none flex flex-wrap gap-4 p-4 opacity-70">
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        width: '3px',
+                        height: '3px',
+                        transform: `translate(${(i * 19) % 50}px, ${(i * 29) % 50}px)`,
+                      }}
+                      className="bg-amber-800 rounded-full"
+                    ></div>
+                  ))}
+                </div>
+              )}
 
               {/* Botanical Decorations Pressed Inside Paper */}
               {stats.decorations.map((item) => (
@@ -253,7 +298,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                     left: `${item.x}%`,
                     top: `${item.y}%`,
                     transform: `translate(-50%, -50%) rotate(${item.rotation}deg) scale(${item.scale})`,
-                    opacity: isBacklight ? 0.95 : 0.8,
+                    opacity: isBacklight ? 0.95 : 0.82,
                   }}
                   className="absolute pointer-events-none transition-transform duration-200"
                 >
@@ -275,11 +320,6 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                 </div>
               ))}
 
-              {/* Water Marbling or Specks if selected */}
-              {stats.decorationType === 'water_marbling' && (
-                <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-amber-800 via-stone-500 to-transparent"></div>
-              )}
-
               {/* Calligraphy Canvas Overlay */}
               <canvas
                 ref={canvasRef}
@@ -297,12 +337,12 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                 }`}
               />
 
-              {/* Artisan Seal Watermark Stamp on Bottom Right */}
-              <div className="relative z-0 self-end mt-auto flex flex-col items-center border-2 border-red-700/60 p-1.5 rounded-sm bg-red-900/5 rotate-3">
-                <span className="text-[10px] font-serif text-red-800/80 font-bold uppercase tracking-wider">
+              {/* Artisan Seal Stamp on Bottom Right */}
+              <div className="relative z-0 self-end mt-auto flex flex-col items-center border-2 border-red-700/60 p-1.5 rounded-sm bg-red-900/5 rotate-2">
+                <span className="text-[10px] font-serif text-red-800/90 font-bold uppercase tracking-wider">
                   Thủ Công
                 </span>
-                <span className="text-[8px] font-serif text-red-800/70">
+                <span className="text-[8px] font-serif text-red-800/80">
                   Việt Nam
                 </span>
               </div>
@@ -320,19 +360,19 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
               onChange={(e) => setTiltAngle(Number(e.target.value))}
               className="w-36 accent-stone-700 cursor-pointer"
             />
-            <span>Nghiêng phải (soi thớ giấy)</span>
+            <span>Nghiêng phải (soi thớ)</span>
           </div>
         </div>
 
         {/* Right Column: Dynamic Spec Sheet & Artisan Deduction Summary (5 Cols) */}
         <div className="lg:col-span-5 flex flex-col gap-4">
-          {/* Poetic Artisan Deduction Summary (As explicitly required by prompt) */}
+          {/* Poetic Artisan Deduction Summary */}
           <div className="bg-amber-50/90 rounded-3xl p-6 border-2 border-amber-800/20 shadow-lg relative overflow-hidden">
             <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-amber-900 font-semibold mb-2">
               <Sparkles className="w-4 h-4 text-amber-700" />
               <span>Lời Bình Nghệ Nhân</span>
             </div>
-            <blockquote className="font-serif italic text-stone-800 text-base md:text-lg leading-relaxed mb-3">
+            <blockquote className="font-serif italic text-stone-800 text-sm md:text-base leading-relaxed mb-3">
               “{specs.artisanDescription}”
             </blockquote>
             <div className="text-xs text-stone-500 font-medium">
@@ -341,8 +381,8 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
           </div>
 
           {/* Detailed Property Cards List */}
-          <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-lg space-y-4">
-            <h3 className="font-serif font-semibold text-stone-900 text-base border-b border-stone-100 pb-2">
+          <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-lg space-y-3.5">
+            <h3 className="font-serif font-semibold text-stone-900 text-sm border-b border-stone-100 pb-2">
               Đặc Tính Giấy Thành Phẩm
             </h3>
 
@@ -410,7 +450,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
             </div>
           </div>
 
-          {/* Action Buttons: Save & Restart */}
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleSave}

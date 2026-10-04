@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { DecorationType, FlowerItem } from '../../types/paper';
+import { DecorationType, FlowerItem, MaterialConfig } from '../../types/paper';
 import { sound } from '../../utils/audio';
 import { ArrowRight, Sparkles, Check } from 'lucide-react';
-import { FirstPersonHands } from '../FirstPersonHands';
+import { ActionIndicator } from '../ActionIndicator';
 
 interface Stage11Props {
+  materials: MaterialConfig;
   currentType: DecorationType;
   decorations: FlowerItem[];
   onChangeType: (type: DecorationType) => void;
@@ -36,27 +37,28 @@ const DECORATION_MODES: {
   {
     id: 'water_marbling',
     title: 'Tạo Vân Nước Thủy Ấn',
-    subtitle: 'Vân mực loang tự nhiên',
+    subtitle: 'Dòng vân mực bồng bềnh',
     icon: '🌊',
-    desc: 'Dòng nước tạo những đường vân mềm mại, gợn sóng bồng bềnh như mây trời.',
+    desc: 'Vân thủy ấn gợn sóng mềm mại như mây trời loang trên bề mặt giấy.',
   },
   {
     id: 'natural_specks',
-    title: 'Tạo Họa Tiết Hạt Cỏ',
+    title: 'Họa Tiết Hạt Cỏ',
     subtitle: 'Hạt cỏ dại & vụn xơ vàng',
     icon: '🌾',
-    desc: 'Lấm tấm những hạt cỏ và vụn sợi vàng rải rác gợi nhớ đồng cỏ trưa hè.',
+    desc: 'Lấm tấm những hạt cỏ và vụn sợi vàng rải rác gợi nhớ đồng quê mùa gặt.',
   },
   {
     id: 'none',
     title: 'Không Trang Trí (Để Mộc)',
-    subtitle: 'Nét tối giản nguyên bản',
+    subtitle: 'Tối giản nguyên bản',
     icon: '📜',
     desc: 'Tôn vinh trọn vẹn chất cảm thuần túy của sợi cỏ tự nhiên.',
   },
 ];
 
 export const Stage11Decorate: React.FC<Stage11Props> = ({
+  materials,
   currentType,
   decorations,
   onChangeType,
@@ -65,6 +67,9 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
 }) => {
   const [selectedPetal, setSelectedPetal] = useState<'daisy' | 'peach' | 'pea' | 'fern' | 'bamboo_leaf'>('daisy');
   const [isPlacing, setIsPlacing] = useState(false);
+  const [placePos, setPlacePos] = useState<{ x: number; y: number } | null>(null);
+
+  const isPandan = materials.grassType === 'pandan';
 
   const handleSelectMode = (type: DecorationType) => {
     sound.playTap();
@@ -72,14 +77,14 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
 
     if (type === 'pressed_flowers') {
       onUpdateDecorations([
-        { id: '1', type: 'daisy', x: 28, y: 35, rotation: 15, scale: 1 },
-        { id: '2', type: 'peach', x: 68, y: 45, rotation: -25, scale: 0.9 },
-        { id: '3', type: 'pea', x: 45, y: 72, rotation: 40, scale: 0.85 },
+        { id: '1', type: 'daisy', x: 30, y: 35, rotation: 15, scale: 1 },
+        { id: '2', type: 'peach', x: 70, y: 45, rotation: -25, scale: 0.9 },
+        { id: '3', type: 'pea', x: 45, y: 70, rotation: 40, scale: 0.85 },
       ]);
     } else if (type === 'pressed_leaves') {
       onUpdateDecorations([
-        { id: '1', type: 'fern', x: 30, y: 40, rotation: -20, scale: 1.1 },
-        { id: '2', type: 'bamboo_leaf', x: 65, y: 60, rotation: 35, scale: 1 },
+        { id: '1', type: 'fern', x: 32, y: 40, rotation: -20, scale: 1.1 },
+        { id: '2', type: 'bamboo_leaf', x: 68, y: 60, rotation: 35, scale: 1 },
       ]);
     } else {
       onUpdateDecorations([]);
@@ -95,15 +100,23 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
 
     sound.playTap();
     setIsPlacing(true);
-    setTimeout(() => setIsPlacing(false), 200);
+    setPlacePos({
+      x: e.clientX - rect.left - rect.width / 2,
+      y: e.clientY - rect.top - rect.height / 2,
+    });
+
+    setTimeout(() => {
+      setIsPlacing(false);
+      setPlacePos(null);
+    }, 200);
 
     const newItem: FlowerItem = {
       id: Date.now().toString(),
-      type: currentType === 'pressed_flowers' ? selectedPetal : 'fern',
+      type: currentType === 'pressed_flowers' ? selectedPetal : 'bamboo_leaf',
       x,
       y,
       rotation: Math.floor(Math.random() * 360),
-      scale: 0.8 + Math.random() * 0.4,
+      scale: 0.85 + Math.random() * 0.35,
     };
 
     onUpdateDecorations([...decorations, newItem]);
@@ -111,25 +124,34 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
 
   return (
     <div className="relative w-full max-w-4xl mx-auto flex flex-col items-center select-none">
-      <FirstPersonHands tool="tweezers" isActing={isPlacing} />
+      {/* 1 Hollow Circle Indicator at petal placement point */}
+      {isPlacing && placePos && (
+        <ActionIndicator
+          count={1}
+          isActing={true}
+          label="Gắp ép hoa lá"
+          offsetX={placePos.x}
+          offsetY={placePos.y}
+        />
+      )}
 
       {/* Header */}
       <div className="text-center mb-4">
         <div className="text-xs uppercase tracking-widest text-amber-800 font-semibold mb-1">
-          Công đoạn 11 · Điểm Xuyết Nghệ Thuật
+          Công đoạn 11 · Trang Trí Thủ Công
         </div>
         <h2 className="text-2xl md:text-3xl font-serif text-stone-900 font-medium">
           Trang Trí Tờ Giấy Cỏ
         </h2>
         <p className="text-sm text-stone-600 mt-1 max-w-xl mx-auto">
-          Chọn một phong cách hoàn thiện để thổi hồn nét đẹp văn hóa truyền thống vào tác phẩm của bạn.
+          Chọn một phong cách hoàn thiện để lưu dấu nét nghệ thuật truyền thống lên bề mặt tờ giấy của bạn.
         </p>
       </div>
 
-      {/* Decoration Workspace */}
-      <div className="w-full bg-stone-100 rounded-3xl p-6 md:p-8 shadow-xl border border-stone-300">
+      {/* Workspace */}
+      <div className="w-full bg-stone-100 rounded-3xl p-6 md:p-8 shadow-xl border border-stone-200">
         {/* Style Selection Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 mb-6">
           {DECORATION_MODES.map((mode) => {
             const isSelected = currentType === mode.id;
             return (
@@ -154,38 +176,86 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
           })}
         </div>
 
-        {/* Paper Canvas Preview with Interactive Tap to Place */}
+        {/* Paper Canvas Preview with Clear, High-Fidelity Decoration Rendering */}
         <div className="w-full flex flex-col items-center">
           <div
             onClick={handleAddFlowerOnPaper}
-            className="relative w-72 h-64 md:w-96 md:h-72 rounded-sm shadow-2xl border-2 border-amber-950/20 flex items-center justify-center p-4 cursor-pointer overflow-hidden bg-[#f4ecd8] group"
+            className={`relative w-72 h-64 md:w-96 md:h-76 rounded-sm shadow-2xl border-2 border-amber-950/20 flex items-center justify-center p-4 cursor-pointer overflow-hidden group ${
+              isPandan ? 'bg-[#d8e8cd]' : 'bg-[#e7eed8]'
+            }`}
           >
             {/* Paper Texture Fibers */}
             <div className="absolute inset-0 opacity-30 bg-[radial-gradient(#78350f_1px,transparent_1px)] [background-size:10px_10px] pointer-events-none"></div>
 
-            {/* Water Marbling Layer */}
+            {/* 1. VISIBLE REALISTIC WATER MARBLING (Vân nước thủy ấn sắc nét) */}
             {currentType === 'water_marbling' && (
-              <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-700 via-stone-600 to-transparent"></div>
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <svg className="w-full h-full opacity-65" viewBox="0 0 400 320" preserveAspectRatio="none">
+                  {/* Organic wave ribbons */}
+                  <path
+                    d="M-20,60 C80,20 160,110 260,50 C340,0 420,80 440,50"
+                    fill="none"
+                    stroke="#854d0e"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    className="opacity-40"
+                  />
+                  <path
+                    d="M-10,120 C100,70 180,170 280,110 C360,60 410,130 430,100"
+                    fill="none"
+                    stroke="#1e3a8a"
+                    strokeWidth="6"
+                    strokeLinecap="round"
+                    className="opacity-35"
+                  />
+                  <path
+                    d="M-30,180 C70,140 170,230 270,170 C350,120 410,190 440,160"
+                    fill="none"
+                    stroke="#78350f"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    className="opacity-35"
+                  />
+                  <path
+                    d="M-20,240 C90,190 190,280 290,220 C360,180 400,240 430,220"
+                    fill="none"
+                    stroke="#047857"
+                    strokeWidth="7"
+                    strokeLinecap="round"
+                    className="opacity-40"
+                  />
+                  <path
+                    d="M0,280 C110,240 210,310 310,270 C370,240 410,290 430,280"
+                    fill="none"
+                    stroke="#92400e"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    className="opacity-30"
+                  />
+                </svg>
+              </div>
             )}
 
-            {/* Natural Specks Layer */}
+            {/* 2. NATURAL SPECKS (Hạt cỏ tự nhiên) */}
             {currentType === 'natural_specks' && (
-              <div className="absolute inset-0 pointer-events-none flex flex-wrap gap-4 p-4 opacity-70">
-                {Array.from({ length: 30 }).map((_, i) => (
+              <div className="absolute inset-0 pointer-events-none flex flex-wrap gap-4 p-4 opacity-75">
+                {Array.from({ length: 36 }).map((_, i) => (
                   <div
                     key={i}
                     style={{
-                      width: '3px',
-                      height: '3px',
-                      transform: `translate(${(i * 19) % 50}px, ${(i * 29) % 50}px)`,
+                      width: `${(i % 3) + 2}px`,
+                      height: `${(i % 3) + 2}px`,
+                      transform: `translate(${(i * 23) % 60}px, ${(i * 31) % 60}px)`,
                     }}
-                    className="bg-amber-800 rounded-full"
+                    className={`rounded-full ${
+                      i % 2 === 0 ? 'bg-amber-800' : 'bg-amber-600'
+                    }`}
                   ></div>
                 ))}
               </div>
             )}
 
-            {/* Placed Pressed Flowers & Leaves */}
+            {/* 3. PRESSED FLOWERS & LEAVES */}
             {decorations.map((item) => (
               <div
                 key={item.id}
@@ -197,33 +267,33 @@ export const Stage11Decorate: React.FC<Stage11Props> = ({
                 className="absolute pointer-events-none transition-transform duration-200"
               >
                 {item.type === 'daisy' && (
-                  <div className="text-xl filter drop-shadow-sm">🌼</div>
+                  <div className="text-2xl filter drop-shadow-sm">🌼</div>
                 )}
                 {item.type === 'peach' && (
-                  <div className="text-xl filter drop-shadow-sm">🌸</div>
+                  <div className="text-2xl filter drop-shadow-sm">🌸</div>
                 )}
                 {item.type === 'pea' && (
-                  <div className="text-xl filter drop-shadow-sm">🌺</div>
+                  <div className="text-2xl filter drop-shadow-sm">🌺</div>
                 )}
                 {item.type === 'fern' && (
-                  <div className="text-2xl filter drop-shadow-sm">🌿</div>
+                  <div className="text-3xl filter drop-shadow-sm">🌿</div>
                 )}
                 {item.type === 'bamboo_leaf' && (
-                  <div className="text-2xl filter drop-shadow-sm">🍃</div>
+                  <div className="text-3xl filter drop-shadow-sm">🍃</div>
                 )}
               </div>
             ))}
 
-            {/* Guidance Overlay */}
+            {/* Placement prompt */}
             {(currentType === 'pressed_flowers' || currentType === 'pressed_leaves') && (
-              <div className="absolute bottom-3 bg-stone-900/70 text-amber-100 text-[11px] px-3 py-1 rounded-full backdrop-blur-sm pointer-events-none group-hover:bg-stone-900 transition-colors">
-                Nhấp bất kỳ điểm nào trên giấy để đặt thêm cánh hoa/lá
+              <div className="absolute bottom-2.5 bg-stone-900/80 text-amber-100 text-[10px] px-3 py-1 rounded-full backdrop-blur-xs pointer-events-none">
+                Nhấp lên giấy để gắp đặt thêm cánh hoa/lá
               </div>
             )}
           </div>
         </div>
 
-        {/* Completion Proceed Button */}
+        {/* Proceed to Stage 12 */}
         <div className="mt-6 flex justify-end">
           <button
             onClick={() => {

@@ -1,9 +1,11 @@
-export type AdditiveType = 'none' | 'bark' | 'bagasse' | 'reed' | 'straw';
+export type GrassType = 'lemongrass' | 'pandan'; // Cỏ lá sả hoặc Cỏ lá dứa
+export type AdditiveType = 'none' | 'bark' | 'bagasse' | 'reed'; // Vỏ cây Dó, Bã mía, Sậy (xóa hoàn toàn rơm nếp)
 
 export interface MaterialConfig {
+  grassType: GrassType;
   additiveType: AdditiveType;
-  grassRatio: number; // e.g. 70-100%
-  additiveRatio: number; // e.g. 0-30%
+  grassRatio: number; // 60-100%
+  additiveRatio: number; // 0-40%
 }
 
 export type GrindLevel = 'coarse' | 'medium' | 'fine';
@@ -26,10 +28,12 @@ export interface PlayerActionStats {
   rinseThoroughness: number; // 0-100
   boilTime: number; // seconds cooked
   poundStrength: number; // 0-100
+  grindCount: number; // number of grinds
   grindLevel: GrindLevel;
+  vatWaterLevel: number; // 40-100%
   starchLevel: StarchLevel;
   deckleUniformity: number; // 0-100 from swaying/shaking
-  deckleThickness: number; // 0-100 from dip angle and lift
+  deckleThickness: number; // 0-100 from dip depth %
   decorations: FlowerItem[];
   decorationType: DecorationType;
 }

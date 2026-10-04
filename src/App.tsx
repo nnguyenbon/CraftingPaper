@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   WorkshopStep,
   MaterialConfig,
@@ -36,6 +36,7 @@ import { Stage11Decorate } from './components/stages/Stage11Decorate';
 import { Stage12FinalShowcase } from './components/stages/Stage12FinalShowcase';
 
 const INITIAL_MATERIALS: MaterialConfig = {
+  grassType: 'lemongrass',
   additiveType: 'none',
   grassRatio: 100,
   additiveRatio: 0,
@@ -46,7 +47,9 @@ const INITIAL_STATS: PlayerActionStats = {
   rinseThoroughness: 100,
   boilTime: 12,
   poundStrength: 90,
+  grindCount: 5,
   grindLevel: 'medium',
+  vatWaterLevel: 75,
   starchLevel: 'medium',
   deckleUniformity: 85,
   deckleThickness: 50,
@@ -134,6 +137,7 @@ export default function App() {
         {/* Step 2: Cắt cỏ */}
         {currentStep === 2 && (
           <Stage2CutGrass
+            materials={materials}
             onComplete={(accuracy) => {
               setStats((prev) => ({ ...prev, cutAccuracy: accuracy }));
               setCurrentStep(3);
@@ -144,6 +148,7 @@ export default function App() {
         {/* Step 3: Rửa sạch */}
         {currentStep === 3 && (
           <Stage3RinseGrass
+            materials={materials}
             onComplete={(rinseScore) => {
               setStats((prev) => ({ ...prev, rinseThoroughness: rinseScore }));
               setCurrentStep(4);
@@ -151,7 +156,7 @@ export default function App() {
           />
         )}
 
-        {/* Step 4: Cắt nhỏ */}
+        {/* Step 4: Cắt nhỏ / băm nhỏ */}
         {currentStep === 4 && (
           <Stage4ChopFine
             materials={materials}
@@ -162,6 +167,7 @@ export default function App() {
         {/* Step 5: Nấu với nước tro */}
         {currentStep === 5 && (
           <Stage5BoilLye
+            materials={materials}
             onComplete={() => setCurrentStep(6)}
           />
         )}
@@ -169,6 +175,7 @@ export default function App() {
         {/* Step 6: Đập dập */}
         {currentStep === 6 && (
           <Stage6PoundFiber
+            materials={materials}
             onComplete={(strength) => {
               setStats((prev) => ({ ...prev, poundStrength: strength }));
               setCurrentStep(7);
@@ -179,6 +186,7 @@ export default function App() {
         {/* Step 7: Nghiền bột */}
         {currentStep === 7 && (
           <Stage7GrindPulp
+            materials={materials}
             currentGrind={stats.grindLevel}
             onChangeGrind={(grind: GrindLevel) =>
               setStats((prev) => ({ ...prev, grindLevel: grind }))
@@ -195,6 +203,10 @@ export default function App() {
             onChangeStarch={(starch: StarchLevel) =>
               setStats((prev) => ({ ...prev, starchLevel: starch }))
             }
+            vatWaterLevel={stats.vatWaterLevel}
+            onChangeWaterLevel={(level: number) =>
+              setStats((prev) => ({ ...prev, vatWaterLevel: level }))
+            }
             onComplete={() => setCurrentStep(9)}
           />
         )}
@@ -203,6 +215,7 @@ export default function App() {
         {currentStep === 9 && (
           <Stage9DeckleForm
             materials={materials}
+            vatWaterLevel={stats.vatWaterLevel}
             onComplete={(uniformity, thickness) => {
               setStats((prev) => ({
                 ...prev,
@@ -214,7 +227,7 @@ export default function App() {
           />
         )}
 
-        {/* Step 10: Phơi giấy */}
+        {/* Step 10: Dán ván & Phơi giấy */}
         {currentStep === 10 && (
           <Stage10Drying
             materials={materials}
@@ -225,6 +238,7 @@ export default function App() {
         {/* Step 11: Trang trí */}
         {currentStep === 11 && (
           <Stage11Decorate
+            materials={materials}
             currentType={stats.decorationType}
             decorations={stats.decorations}
             onChangeType={(type: DecorationType) =>
