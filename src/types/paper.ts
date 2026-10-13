@@ -74,8 +74,24 @@ export interface SavedPaper {
   id: string;
   date: string;
   name: string;
+  playerName?: string;
   materials: MaterialConfig;
   stats: PlayerActionStats;
   specs: CalculatedPaperSpecs;
   canvasDrawing?: string;
+}
+
+export interface ParticipantRecord {
+  id: string;
+  playerName: string;
+  completedAt: string;
+  timestamp: number;
+  turnNumber: number;
+  paperName: string;
+  grassType: GrassType;
+  additiveType: AdditiveType;
+  thicknessGsm: number;
+  colorName: string;
+  colorHex: string;
+  artisanDescription: string;
 }

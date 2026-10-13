@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MaterialConfig, AdditiveType, GrassType } from '../../types/paper';
 import { sound } from '../../utils/audio';
-import { ArrowRight, Info, Check } from 'lucide-react';
+import { ArrowRight, Info, Check, X, QrCode, ThumbsUp } from 'lucide-react';
 
 interface Stage1Props {
   materials: MaterialConfig;
@@ -16,21 +16,21 @@ const GRASS_OPTIONS: {
   colorPreview: string;
   desc: string;
 }[] = [
-  {
-    id: 'lemongrass',
-    name: 'Cỏ Lá Sả',
-    sub: 'Lá mảnh dài, thơm dịu',
-    colorPreview: 'bg-emerald-100 border-emerald-400 text-emerald-950',
-    desc: 'Nguyên liệu nền truyền thống với thớ sợi mảnh đều, cho màu giấy xanh nhạt tự nhiên thanh thoát.',
-  },
-  {
-    id: 'pandan',
-    name: 'Cỏ Lá Dứa',
-    sub: 'Sắc diệp lục đậm, xơ dẻo',
-    colorPreview: 'bg-emerald-200 border-emerald-500 text-emerald-950',
-    desc: 'Lá dứa dồi dào diệp lục, sợi dẻo mềm, cho màu giấy xanh lá đậm hơn và bề mặt mịn êm.',
-  },
-];
+    {
+      id: 'lemongrass',
+      name: 'Cỏ Lá Sả',
+      sub: 'Lá mảnh dài, thơm dịu',
+      colorPreview: 'bg-emerald-100 border-emerald-400 text-emerald-950',
+      desc: 'Nguyên liệu nền truyền thống với thớ sợi mảnh đều, cho màu giấy xanh nhạt tự nhiên thanh thoát.',
+    },
+    {
+      id: 'pandan',
+      name: 'Cỏ Lá Dứa',
+      sub: 'Sắc diệp lục đậm, xơ dẻo',
+      colorPreview: 'bg-emerald-200 border-emerald-500 text-emerald-950',
+      desc: 'Lá dứa dồi dào diệp lục, sợi dẻo mềm, cho màu giấy xanh lá đậm hơn và bề mặt mịn êm.',
+    },
+  ];
 
 const ADDITIVE_OPTIONS: {
   id: AdditiveType;
@@ -39,41 +39,43 @@ const ADDITIVE_OPTIONS: {
   effect: string;
   colorBadge: string;
 }[] = [
-  {
-    id: 'none',
-    name: '100% Cỏ mộc',
-    sub: 'Không phối thêm',
-    effect: 'Tờ giấy thuần túy sợi cỏ tự nhiên, màu xanh nhạt hoặc xanh lá dứa mộc mạc.',
-    colorBadge: 'bg-emerald-50 border-emerald-300 text-emerald-900',
-  },
-  {
-    id: 'bark',
-    name: 'Vỏ Cây Dó',
-    sub: 'Di sản giấy Dó Việt',
-    effect: 'Chứa bó sợi xơ dài dẻo dai bậc nhất; tăng độ bền dai vượt trội, gân xơ rõ và ánh màu nâu be trầm.',
-    colorBadge: 'bg-amber-100 border-amber-400 text-amber-950',
-  },
-  {
-    id: 'bagasse',
-    name: 'Bã Mía',
-    sub: 'Xốp nhẹ & sáng màu',
-    effect: 'Giúp giấy sáng màu, nhẹ tơi, bề mặt hơi xốp mềm mại, khả năng thấm hút mực êm ái.',
-    colorBadge: 'bg-stone-100 border-stone-300 text-stone-900',
-  },
-  {
-    id: 'reed',
-    name: 'Sậy Tự Nhiên',
-    sub: 'Gân sợi nổi bật',
-    effect: 'Thân sậy dẻo dai tạo những đường thớ sợi dọc sắc nét, sắc vàng be tự nhiên của bến bãi ven sông.',
-    colorBadge: 'bg-lime-50 border-lime-400 text-lime-950',
-  },
-];
+    {
+      id: 'none',
+      name: '100% Cỏ mộc',
+      sub: 'Không phối thêm',
+      effect: 'Tờ giấy thuần túy sợi cỏ tự nhiên, màu xanh nhạt hoặc xanh lá dứa mộc mạc.',
+      colorBadge: 'bg-emerald-50 border-emerald-300 text-emerald-900',
+    },
+    {
+      id: 'bark',
+      name: 'Vỏ Cây Dó',
+      sub: 'Di sản giấy Dó Việt',
+      effect: 'Chứa bó sợi xơ dài dẻo dai bậc nhất; tăng độ bền dai vượt trội, gân xơ rõ và ánh màu nâu be trầm.',
+      colorBadge: 'bg-amber-100 border-amber-400 text-amber-950',
+    },
+    {
+      id: 'bagasse',
+      name: 'Bã Mía',
+      sub: 'Xốp nhẹ & sáng màu',
+      effect: 'Giúp giấy sáng màu, nhẹ tơi, bề mặt hơi xốp mềm mại, khả năng thấm hút mực êm ái.',
+      colorBadge: 'bg-stone-100 border-stone-300 text-stone-900',
+    },
+    {
+      id: 'reed',
+      name: 'Sậy Tự Nhiên',
+      sub: 'Gân sợi nổi bật',
+      effect: 'Thân sậy dẻo dai tạo những đường thớ sợi dọc sắc nét, sắc vàng be tự nhiên của bến bãi ven sông.',
+      colorBadge: 'bg-lime-50 border-lime-400 text-lime-950',
+    },
+  ];
 
 export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
   materials,
   onChangeMaterials,
   onNext,
 }) => {
+  const [showFollowModal, setShowFollowModal] = useState<boolean>(true);
+
   const handleSelectGrass = (type: GrassType) => {
     sound.playTap();
     onChangeMaterials({
@@ -126,6 +128,19 @@ export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
         <p className="text-sm text-stone-100 mt-1 max-w-xl mx-auto">
           Chọn loại cỏ làm nền chính và phối thêm nguyên liệu thảo mộc truyền thống để quyết định màu sắc, độ dai và cấu trúc sợi của tờ giấy.
         </p>
+
+        {/* Reopen Follow Modal Pill */}
+        <button
+          onClick={() => {
+            sound.playTap();
+            setShowFollowModal(true);
+          }}
+          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-900/40 hover:bg-blue-900/60 text-blue-200 border border-blue-500/30 text-xs font-medium transition-colors cursor-pointer"
+          title="Xem lại mã QR Follow Fanpage"
+        >
+          <QrCode className="w-3.5 h-3.5 text-blue-300" />
+          <span>Follow Page Facebook</span>
+        </button>
       </div>
 
       {/* Main Container */}
@@ -148,11 +163,10 @@ export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
                 <button
                   key={grass.id}
                   onClick={() => handleSelectGrass(grass.id)}
-                  className={`p-4 rounded-2xl border-2 text-left cursor-pointer transition-all flex items-start justify-between ${
-                    isSelected
-                      ? 'border-emerald-700 bg-emerald-50/80 shadow-md ring-2 ring-emerald-600/20'
-                      : 'border-stone-200 bg-white hover:border-emerald-300'
-                  }`}
+                  className={`p-4 rounded-2xl border-2 text-left cursor-pointer transition-all flex items-start justify-between ${isSelected
+                    ? 'border-emerald-700 bg-emerald-50/80 shadow-md ring-2 ring-emerald-600/20'
+                    : 'border-stone-200 bg-white hover:border-emerald-300'
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xl shrink-0 mt-0.5">
@@ -195,11 +209,10 @@ export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
                 <button
                   key={opt.id}
                   onClick={() => handleSelectAdditive(opt.id)}
-                  className={`p-3.5 rounded-2xl border-2 text-left cursor-pointer transition-all flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-amber-700 bg-amber-50 shadow-md ring-2 ring-amber-600/20'
-                      : 'border-stone-200 bg-white hover:border-amber-300'
-                  }`}
+                  className={`p-3.5 rounded-2xl border-2 text-left cursor-pointer transition-all flex flex-col justify-between ${isSelected
+                    ? 'border-amber-700 bg-amber-50 shadow-md ring-2 ring-amber-600/20'
+                    : 'border-stone-200 bg-white hover:border-amber-300'
+                    }`}
                 >
                   <div>
                     <div className="flex items-center justify-between mb-1">
@@ -294,6 +307,66 @@ export const Stage1SelectMaterials: React.FC<Stage1Props> = ({
           </button>
         </div>
       </div>
+
+      {/* Modal Follow Page FB trước khi chơi game */}
+      {showFollowModal && (
+        <div className="fixed inset-0 z-50 top-10 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-sm md:max-w-md bg-amber-50 rounded-3xl p-6 md:p-8 shadow-2xl border-2 border-amber-900/30 text-stone-900 text-center flex flex-col items-center">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                sound.playTap();
+                setShowFollowModal(false);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-amber-200/60 text-stone-600 transition-colors cursor-pointer"
+              aria-label="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Title */}
+            <h2 className="font-serif text-xl md:text-2xl font-bold text-stone-900 mb-2 leading-snug">
+              Follow Page trước khi chơi game nhé
+            </h2>
+
+            {/* Subtitle */}
+            <p className="text-xs text-stone-600 max-w-xs mb-3.5 leading-relaxed font-sans">
+              Quét mã QR bằng Camera điện thoại để theo dõi Fanpage của chúng mình và cập nhật thông tin workshop nhé!
+            </p>
+
+            {/* QR Code Container */}
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-amber-900/15 shadow-md flex flex-col items-center mb-5">
+              <img
+                src="/assets/qrfb.jpg"
+                alt="Mã QR Facebook Fanpage"
+                className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-xl"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <button
+              onClick={() => {
+                sound.playTap();
+                setShowFollowModal(false);
+              }}
+              className="w-full py-3 px-5 bg-amber-800 hover:bg-amber-700 text-amber-100 font-serif font-bold text-sm rounded-2xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <span>Vào Chơi Game Ngay</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() => {
+                sound.playTap();
+                setShowFollowModal(false);
+              }}
+              className="mt-2.5 text-xs text-stone-500 hover:text-stone-800 underline cursor-pointer"
+            >
+              Bỏ qua và vào game
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

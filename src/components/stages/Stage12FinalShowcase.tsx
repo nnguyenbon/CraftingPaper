@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CalculatedPaperSpecs, MaterialConfig, PlayerActionStats, SavedPaper } from '../../types/paper';
+import {
+  CalculatedPaperSpecs,
+  MaterialConfig,
+  PlayerActionStats,
+  SavedPaper,
+  ParticipantRecord,
+} from '../../types/paper';
 import { sound } from '../../utils/audio';
 import {
   RotateCcw,
@@ -8,6 +14,12 @@ import {
   PenTool,
   BookmarkPlus,
   CheckCircle,
+  Award,
+  UserCheck,
+  CheckCircle2,
+  Edit3,
+  X,
+  User,
 } from 'lucide-react';
 
 interface Stage12Props {
@@ -16,6 +28,9 @@ interface Stage12Props {
   specs: CalculatedPaperSpecs;
   onRestart: () => void;
   onSaveToBook: (paper: SavedPaper) => void;
+  onRecordParticipant: (playerName: string) => ParticipantRecord;
+  totalParticipants: number;
+  currentParticipant?: ParticipantRecord | null;
 }
 
 export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
@@ -24,11 +39,23 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
   specs,
   onRestart,
   onSaveToBook,
+  onRecordParticipant,
+  totalParticipants,
+  currentParticipant,
 }) => {
   const [isBacklight, setIsBacklight] = useState(false);
   const [tiltAngle, setTiltAngle] = useState(0);
   const [isDrawingMode, setIsDrawingMode] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+
+  // Player Name and Participant Tracking
+  const [playerName, setPlayerName] = useState(currentParticipant?.playerName || '');
+  const [nameInput, setNameInput] = useState(currentParticipant?.playerName || '');
+  const [showNameModal, setShowNameModal] = useState(!currentParticipant);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [savedParticipant, setSavedParticipant] = useState<ParticipantRecord | null>(
+    currentParticipant || null
+  );
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPainting = useRef(false);
@@ -36,6 +63,25 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
   useEffect(() => {
     sound.playZenChime();
   }, []);
+
+  useEffect(() => {
+    if (currentParticipant) {
+      setPlayerName(currentParticipant.playerName);
+      setNameInput(currentParticipant.playerName);
+      setSavedParticipant(currentParticipant);
+    }
+  }, [currentParticipant]);
+
+  const handleRegisterName = (nameToSave: string) => {
+    const trimmed = nameToSave.trim() || `Nghệ nhân #${totalParticipants + 1}`;
+    setPlayerName(trimmed);
+    setNameInput(trimmed);
+    const record = onRecordParticipant(trimmed);
+    setSavedParticipant(record);
+    setShowNameModal(false);
+    setIsEditingName(false);
+    sound.playZenChime();
+  };
 
   const handleStartDraw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawingMode) return;
@@ -104,6 +150,12 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
     const canvas = canvasRef.current;
     const drawingData = canvas ? canvas.toDataURL() : undefined;
 
+    let finalPlayerName = playerName.trim() || nameInput.trim();
+    if (!savedParticipant) {
+      finalPlayerName = finalPlayerName || `Nghệ nhân #${totalParticipants + 1}`;
+      handleRegisterName(finalPlayerName);
+    }
+
     const paperRecord: SavedPaper = {
       id: Date.now().toString(),
       date: new Date().toLocaleDateString('vi-VN', {
@@ -112,6 +164,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
         year: 'numeric',
       }),
       name: `Giấy ${materials.grassType === 'pandan' ? 'Lá Dứa' : 'Lá Sả'} · ${specs.colorName}`,
+      playerName: finalPlayerName || undefined,
       materials,
       stats,
       specs,
@@ -119,6 +172,14 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
     };
 
     onSaveToBook(paperRecord);
+  };
+
+  const handleRestartClick = () => {
+    sound.playTap();
+    if (!savedParticipant && (playerName.trim() || nameInput.trim())) {
+      handleRegisterName(playerName.trim() || nameInput.trim());
+    }
+    onRestart();
   };
 
   return (
@@ -338,11 +399,14 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
               />
 
               {/* Artisan Seal Stamp on Bottom Right */}
-              <div className="relative z-0 self-end mt-auto flex flex-col items-center border-2 border-red-700/60 p-1.5 rounded-sm bg-red-900/5 rotate-2">
-                <span className="text-[10px] font-serif text-red-800/90 font-bold uppercase tracking-wider">
-                  Thủ Công
+              <div className="relative z-0 self-end mt-auto flex flex-col items-center border-2 border-red-700/75 p-1.5 rounded-sm bg-red-900/10 rotate-2 max-w-[120px] text-center select-none shadow-2xs">
+                <span className="text-[8px] font-serif text-red-800/80 font-bold uppercase tracking-widest leading-tight">
+                  Nghệ Nhân
                 </span>
-                <span className="text-[8px] font-serif text-red-800/80">
+                <span className="text-[10px] font-serif text-red-950 font-bold truncate max-w-[100px] px-1 leading-tight">
+                  {playerName || 'Thủ Công'}
+                </span>
+                <span className="text-[7px] font-serif text-red-700/70 leading-tight">
                   Việt Nam
                 </span>
               </div>
@@ -450,6 +514,78 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
             </div>
           </div>
 
+          {/* Artisan Identity & Participant Registration Card */}
+          <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-serif font-bold text-stone-900">
+                <Award className="w-4 h-4 text-amber-700" />
+                <span>Ghi Danh Nghệ Nhân Chế Tác</span>
+              </div>
+              {savedParticipant ? (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  Lượt #{savedParticipant.turnNumber}
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">
+                  Chưa ghi danh
+                </span>
+              )}
+            </div>
+
+            {savedParticipant && !isEditingName ? (
+              <div className="flex items-center justify-between bg-amber-50/80 rounded-2xl p-3 border border-amber-200/70">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-amber-800 text-amber-100 font-serif font-bold text-xs flex items-center justify-center shrink-0">
+                    {playerName ? playerName.charAt(0).toUpperCase() : 'N'}
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-stone-900">{playerName}</div>
+                    <div className="text-[11px] text-stone-500 font-sans">
+                      Đã lưu vào danh sách người chơi ({savedParticipant.completedAt})
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="p-1.5 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-100 text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Chỉnh sửa tên người chơi"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Đổi tên</span>
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRegisterName(nameInput);
+                }}
+                className="space-y-2"
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="Nhập họ và tên người chơi..."
+                    className="flex-1 px-3.5 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-amber-800 hover:bg-amber-700 text-amber-100 rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <UserCheck className="w-3.5 h-3.5" />
+                    <span>{savedParticipant ? 'Cập nhật' : 'Lưu tên'}</span>
+                  </button>
+                </div>
+                <div className="text-[11px] text-stone-500 italic">
+                  * Tên sẽ được khắc triện đỏ trên giấy và lưu vào danh sách người tham gia workshop.
+                </div>
+              </form>
+            )}
+          </div>
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -475,10 +611,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
             </button>
 
             <button
-              onClick={() => {
-                sound.playTap();
-                onRestart();
-              }}
+              onClick={handleRestartClick}
               className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-medium bg-stone-900 hover:bg-stone-800 text-amber-100 transition-all shadow-md cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
@@ -487,6 +620,74 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
           </div>
         </div>
       </div>
+
+      {/* Congratulatory & Player Name Registration Modal */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-md bg-amber-50 rounded-3xl p-6 md:p-7 shadow-2xl border-2 border-amber-900/30 text-stone-900">
+            <button
+              onClick={() => setShowNameModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-amber-200/60 text-stone-500 cursor-pointer transition-colors"
+              aria-label="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 rounded-2xl bg-amber-800/10 text-amber-900 mx-auto flex items-center justify-center mb-3">
+                <Award className="w-8 h-8 text-amber-800" />
+              </div>
+              <h3 className="font-serif text-xl font-bold text-stone-900">
+                Chúc Mừng Nghệ Nhân!
+              </h3>
+              <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                Bạn đã hoàn thành xuất sắc 12 công đoạn làm giấy thủ công. Mời bạn nhập tên để khắc triện đỏ lên tác phẩm và lưu danh vào số lượng người tham gia!
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleRegisterName(nameInput);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-serif font-bold text-stone-700 mb-1.5">
+                  Họ và tên nghệ nhân / người chơi:
+                </label>
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="Ví dụ: Nguyễn Văn A..."
+                  className="w-full px-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs md:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700 shadow-xs"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleRegisterName(nameInput || `Nghệ nhân #${totalParticipants + 1}`);
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer transition-colors"
+                >
+                  Để sau / Ẩn danh
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-800 hover:bg-amber-700 text-amber-100 text-xs font-bold shadow-md cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>Khắc triện & Ghi danh</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

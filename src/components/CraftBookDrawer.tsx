@@ -79,10 +79,17 @@ export const CraftBookDrawer: React.FC<CraftBookDrawerProps> = ({
                 {/* Details */}
                 <div className="flex-1 text-left w-full">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-serif font-semibold text-stone-900 text-sm">
-                      {paper.name}
-                    </h4>
-                    <span className="text-[11px] text-stone-400 flex items-center gap-1 font-mono">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="font-serif font-semibold text-stone-900 text-sm">
+                        {paper.name}
+                      </h4>
+                      {paper.playerName && (
+                        <span className="text-[10px] font-serif px-1.5 py-0.2 rounded-sm bg-red-100 text-red-800 border border-red-200 font-medium">
+                          Nghệ nhân: {paper.playerName}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-stone-400 flex items-center gap-1 font-mono shrink-0">
                       <Calendar className="w-3 h-3" />
                       {paper.date}
                     </span>

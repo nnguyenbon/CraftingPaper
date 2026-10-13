@@ -1,5 +1,5 @@
 import React from 'react';
-import { Volume2, VolumeX, BookOpen, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, BookOpen, RotateCcw, Users } from 'lucide-react';
 import { WorkshopStep } from '../types/paper';
 
 interface HeaderNavProps {
@@ -9,6 +9,8 @@ interface HeaderNavProps {
   onOpenBook: () => void;
   onReset: () => void;
   savedCount: number;
+  participantCount: number;
+  onOpenParticipants: () => void;
 }
 
 const STEP_LABELS: Record<WorkshopStep, string> = {
@@ -33,6 +35,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenBook,
   onReset,
   savedCount,
+  participantCount,
+  onOpenParticipants,
 }) => {
   return (
     <header className="w-full bg-stone-900/90 backdrop-blur-md border-b border-amber-900/30 text-amber-50 px-4 md:px-8 py-3.5 flex items-center justify-between z-30 sticky top-0">
@@ -62,6 +66,21 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           {isMuted ? <VolumeX className="w-4 h-4 text-stone-500" /> : <Volume2 className="w-4 h-4 text-amber-300" />}
         </button>
 
+        {/* Participants Registry */}
+        <button
+          onClick={onOpenParticipants}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-800/80 hover:bg-stone-750 text-amber-200 border border-stone-700/60 text-xs font-medium transition-colors cursor-pointer"
+          title="Xem danh sách người chơi đã tham gia"
+        >
+          <Users className="w-3.5 h-3.5 text-amber-300" />
+          <span className="hidden sm:inline">Người chơi</span>
+          {participantCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full bg-amber-700/80 text-amber-100 font-bold text-[10px] flex items-center justify-center font-mono">
+              {participantCount}
+            </span>
+          )}
+        </button>
+
         {/* Saved Papers Book */}
         <button
           onClick={onOpenBook}
@@ -70,7 +89,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           <BookOpen className="w-3.5 h-3.5 text-amber-300" />
           <span className="hidden sm:inline">Sổ Tay</span>
           {savedCount > 0 && (
-            <span className="w-4 h-4 rounded-full bg-amber-600 text-stone-950 font-bold text-[10px] flex items-center justify-center">
+            <span className="w-4 h-4 rounded-full bg-amber-600 text-stone-950 font-bold text-[10px] flex items-center justify-center font-mono">
               {savedCount}
             </span>
           )}
