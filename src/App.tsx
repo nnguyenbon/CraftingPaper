@@ -203,6 +203,7 @@ export default function App() {
       {/* Top Bar Contract (3 Zones) */}
       <HeaderNav
         currentStep={currentStep}
+        onSelectStep={setCurrentStep}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         onOpenBook={() => {

@@ -20,7 +20,19 @@ import {
   Edit3,
   X,
   User,
+  Mail,
+  Send,
+  Download,
+  Loader2,
+  AlertCircle,
+  Key,
+  HelpCircle,
+  Check,
+  ExternalLink,
+  Copy,
+  RefreshCw,
 } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
 interface Stage12Props {
   materials: MaterialConfig;
@@ -56,6 +68,216 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
   const [savedParticipant, setSavedParticipant] = useState<ParticipantRecord | null>(
     currentParticipant || null
   );
+
+  // Paper Element Reference for Image Export
+  const paperSheetRef = useRef<HTMLDivElement | null>(null);
+
+  // Email and Image Export States
+  const [emailInput, setEmailInput] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const [sendSuccessMessage, setSendSuccessMessage] = useState<string | null>(null);
+  const [sendErrorMessage, setSendErrorMessage] = useState<string | null>(null);
+  const [isGmailConfigured, setIsGmailConfigured] = useState<boolean | null>(null);
+  const [connectedUserEmail, setConnectedUserEmail] = useState<string>('');
+  const [showSetupGuideModal, setShowSetupGuideModal] = useState(false);
+  const [copiedEnvSnippet, setCopiedEnvSnippet] = useState(false);
+
+  // Email Confirmation & Verification Modal States
+  type EmailModalStep = 'confirm' | 'sending' | 'success' | 'failed' | null;
+  const [emailModalStep, setEmailModalStep] = useState<EmailModalStep>(null);
+  const [sentResultData, setSentResultData] = useState<{
+    recipientEmail: string;
+    senderEmail?: string;
+    messageId?: string;
+    timestamp?: string;
+    paperTitle?: string;
+    errorDetail?: string;
+  } | null>(null);
+
+  // Query backend status for Gmail credentials
+  const checkEmailConfig = async () => {
+    try {
+      const res = await fetch('/api/email-config-status');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data.isConfigured === 'boolean') {
+          setIsGmailConfigured(data.isConfigured);
+          if (data.userEmail) {
+            setConnectedUserEmail(data.userEmail);
+          }
+        }
+      }
+    } catch {
+      // Backend status query failsafe
+    }
+  };
+
+  useEffect(() => {
+    checkEmailConfig();
+  }, []);
+
+  // Capture the handmade paper sheet into a 2x Retina PNG data URL
+  const generatePaperImage = async (): Promise<string> => {
+    if (!paperSheetRef.current) {
+      throw new Error('Không tìm thấy khung tranh giấy thành phẩm.');
+    }
+
+    const node = paperSheetRef.current;
+    const originalTransform = node.style.transform;
+    const originalTransition = node.style.transition;
+
+    // Temporarily straighten up paper for export snapshot
+    node.style.transform = 'none';
+    node.style.transition = 'none';
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      const dataUrl = await toPng(node, {
+        quality: 0.96,
+        pixelRatio: 2,
+        cacheBust: true,
+      });
+      return dataUrl;
+    } finally {
+      node.style.transform = originalTransform;
+      node.style.transition = originalTransition;
+    }
+  };
+
+  // Step 1: Validate email and prompt user for confirmation before sending
+  const handlePromptSendEmail = (customEmail?: string) => {
+    const emailToSend = (customEmail || emailInput).trim();
+    if (!emailToSend) {
+      setSendErrorMessage('Vui lòng nhập địa chỉ email của bạn.');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToSend)) {
+      setSendErrorMessage('Địa chỉ email chưa đúng định dạng (ví dụ: nghenhan@gmail.com).');
+      return;
+    }
+
+    setSendErrorMessage(null);
+    setEmailModalStep('confirm');
+  };
+
+  // Step 2: Execute actual send via Google Mail API and record verifiable result
+  const handleExecuteSendEmail = async (customEmail?: string) => {
+    const emailToSend = (customEmail || emailInput).trim();
+    if (!emailToSend) return;
+
+    setIsSendingEmail(true);
+    setEmailModalStep('sending');
+    setSendErrorMessage(null);
+    setSendSuccessMessage(null);
+
+    try {
+      const dataUrl = await generatePaperImage();
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientEmail: emailToSend,
+          playerName: playerName.trim() || nameInput.trim() || 'Nghệ nhân',
+          paperImageBase64: dataUrl,
+          specs,
+          materials,
+          date: new Date().toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          }),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const timeStr = `${new Date().toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })} · ${new Date().toLocaleDateString('vi-VN')}`;
+
+        setSentResultData({
+          recipientEmail: emailToSend,
+          senderEmail: connectedUserEmail || 'mocxinh.handmade@gmail.com',
+          messageId: data.messageId || 'MSG-' + Date.now(),
+          timestamp: timeStr,
+          paperTitle: `Giấy ${materials.grassType === 'pandan' ? 'Lá Dứa' : 'Lá Sả'} · ${specs.colorName}`,
+        });
+        setSendSuccessMessage(`Đã gửi thành phẩm thành công tới ${emailToSend}!`);
+        setIsGmailConfigured(true);
+        setEmailModalStep('success');
+        sound.playZenChime();
+      } else {
+        if (data.code === 'MISSING_GMAIL_KEYS') {
+          setIsGmailConfigured(false);
+          setSentResultData({
+            recipientEmail: emailToSend,
+            errorDetail: 'Chưa cấu hình tài khoản Google Mail trong file .env.',
+          });
+          setEmailModalStep('failed');
+        } else if (data.code === 'AUTH_FAILED') {
+          setSentResultData({
+            recipientEmail: emailToSend,
+            errorDetail: 'Xác thực Gmail thất bại. Vui lòng kiểm tra lại Google App Password 16 ký tự.',
+          });
+          setEmailModalStep('failed');
+        } else {
+          setSentResultData({
+            recipientEmail: emailToSend,
+            errorDetail: data.message || 'Không thể gửi email. Vui lòng thử lại.',
+          });
+          setEmailModalStep('failed');
+        }
+      }
+    } catch (err: any) {
+      setSentResultData({
+        recipientEmail: emailToSend,
+        errorDetail: 'Lỗi khi gửi email: ' + (err?.message || 'Không kết nối được tới máy chủ'),
+      });
+      setEmailModalStep('failed');
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
+  // Backwards compatible alias
+  const handleSendEmail = handlePromptSendEmail;
+
+  // Handle direct PNG download to local device
+  const handleDownloadImage = async () => {
+    setIsDownloadingImage(true);
+    try {
+      const dataUrl = await generatePaperImage();
+      const safeName = (playerName || nameInput || 'Nghe-Nhan')
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '-');
+      const link = document.createElement('a');
+      link.download = `Giay-Thu-Cong-${safeName}-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+      sound.playZenChime();
+    } catch (err: any) {
+      alert('Không thể xuất ảnh: ' + (err?.message || 'Lỗi không xác định'));
+    } finally {
+      setIsDownloadingImage(false);
+    }
+  };
+
+  const handleCopyEnvTemplate = () => {
+    const template = `GMAIL_USER="your_email@gmail.com"\nGMAIL_APP_PASSWORD="xxxx xxxx xxxx xxxx"`;
+    navigator.clipboard.writeText(template);
+    setCopiedEnvSnippet(true);
+    setTimeout(() => setCopiedEnvSnippet(false), 2500);
+  };
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isPainting = useRef(false);
@@ -258,6 +480,7 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
 
             {/* THE HANDMADE PAPER SHEET */}
             <div
+              ref={paperSheetRef}
               style={{
                 backgroundColor: specs.colorHex,
                 transform: `perspective(1000px) rotateY(${tiltAngle}deg)`,
@@ -586,6 +809,159 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
             )}
           </div>
 
+          {/* Gửi Thành Phẩm Về Email & Xuất Ảnh Chất Lượng Cao */}
+          <div className="bg-gradient-to-br from-white via-amber-50/40 to-white rounded-3xl p-5 border-2 border-amber-900/20 shadow-lg space-y-3.5 relative overflow-hidden">
+            {/* Ambient subtle glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-800/10 text-amber-800 flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-amber-800" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-xs md:text-sm text-stone-900 leading-tight">
+                    Nhận Ảnh Thành Phẩm Qua Email
+                  </h4>
+                  <p className="text-[11px] text-stone-500">
+                    Gửi ảnh độ phân giải cao & chứng nhận chế tác trực tiếp về hộp thư
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              {isGmailConfigured === true ? (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  {connectedUserEmail ? connectedUserEmail : 'Gmail sẵn sàng'}
+                </span>
+              ) : isGmailConfigured === false ? (
+                <button
+                  onClick={() => setShowSetupGuideModal(true)}
+                  className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Bấm để xem hướng dẫn thêm key"
+                >
+                  <Key className="w-3 h-3 text-amber-700" />
+                  Cần thêm key .env
+                </button>
+              ) : null}
+            </div>
+
+            {/* Input & Send Action */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendEmail();
+              }}
+              className="space-y-2.5"
+            >
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                <input
+                  type="email"
+                  value={emailInput}
+                  onChange={(e) => {
+                    setEmailInput(e.target.value);
+                    if (sendErrorMessage) setSendErrorMessage(null);
+                  }}
+                  placeholder="Nhập email của bạn (ví dụ: nghenhan@gmail.com)..."
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-xs md:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700 shadow-xs"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={isSendingEmail}
+                  className="flex-1 py-2.5 px-4 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 hover:brightness-110 active:scale-98 text-amber-50 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
+                      <span>Đang xuất ảnh & gửi mail...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Gửi Ảnh Qua Email</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadImage}
+                  disabled={isDownloadingImage}
+                  title="Tải ảnh PNG độ nét cao về thiết bị"
+                  className="py-2.5 px-3 bg-stone-100 hover:bg-stone-200 active:scale-98 text-stone-800 rounded-xl text-xs font-semibold shadow-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 border border-stone-200 shrink-0 disabled:opacity-60"
+                >
+                  {isDownloadingImage ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-stone-600" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5 text-stone-600" />
+                  )}
+                  <span className="hidden sm:inline">Tải ảnh PNG</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Success Message Banner */}
+            {sendSuccessMessage && (
+              <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <span className="font-semibold">{sendSuccessMessage}</span>
+                  <div className="text-[11px] text-emerald-700 mt-0.5">
+                    * Nếu không thấy trong Hộp thư đến, vui lòng kiểm tra thêm mục Thư rác (Spam) hoặc Quảng cáo.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message Banner */}
+            {sendErrorMessage && (
+              <div className="flex items-start justify-between gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800 animate-fade-in">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold">{sendErrorMessage}</div>
+                    {isGmailConfigured === false && (
+                      <button
+                        type="button"
+                        onClick={() => setShowSetupGuideModal(true)}
+                        className="text-[11px] text-amber-900 underline font-semibold mt-1 flex items-center gap-1 hover:text-amber-700 cursor-pointer"
+                      >
+                        <Key className="w-3 h-3" />
+                        <span>Xem hướng dẫn thêm key Gmail vào file .env</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSendErrorMessage(null)}
+                  className="text-red-400 hover:text-red-700 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Setup Guide Link */}
+            <div className="flex items-center justify-between pt-1 border-t border-amber-900/10 text-[11px]">
+              <span className="text-stone-500">Dịch vụ gửi: Google Mail (Gmail SMTP)</span>
+              <button
+                type="button"
+                onClick={() => setShowSetupGuideModal(true)}
+                className="text-amber-800 hover:text-amber-900 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <HelpCircle className="w-3 h-3" />
+                <span>Cấu hình key Gmail</span>
+              </button>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -666,6 +1042,23 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-serif font-bold text-stone-700 mb-1.5 flex items-center justify-between">
+                  <span>Email nhận ảnh thành phẩm:</span>
+                  <span className="text-[10px] text-stone-400 font-normal font-sans">(Tùy chọn)</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="nghenhan@gmail.com"
+                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs md:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700 shadow-xs"
+                  />
+                </div>
+              </div>
+
               <div className="flex gap-2.5 pt-1">
                 <button
                   type="button"
@@ -685,6 +1078,374 @@ export const Stage12FinalShowcase: React.FC<Stage12Props> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Google Mail Setup Guide Modal */}
+      {showSetupGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 md:p-7 shadow-2xl border-2 border-amber-900/30 text-stone-900 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowSetupGuideModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-stone-100 text-stone-500 cursor-pointer transition-colors"
+              aria-label="Đóng"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-800/10 text-amber-800 flex items-center justify-center shrink-0">
+                <Key className="w-6 h-6 text-amber-800" />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-stone-900">
+                  Hướng Dẫn Thêm Key Google Mail
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Chỉ cần 1 phút thiết lập trong file <code className="bg-stone-100 px-1 py-0.5 rounded text-amber-800 font-mono">.env</code> là dùng được ngay
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3.5 text-xs text-stone-700 leading-relaxed mb-5">
+              {/* Step 1 */}
+              <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200">
+                <div className="font-bold text-stone-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-amber-800 text-white text-[10px] flex items-center justify-center">1</span>
+                  <span>Mở file .env ở thư mục gốc dự án</span>
+                </div>
+                <p className="text-stone-600 text-[11px]">
+                  File <code className="font-mono text-amber-900 font-semibold">.env</code> đã được tạo sẵn ở thư mục gốc của dự án CraftingPaper.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200">
+                <div className="font-bold text-stone-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-amber-800 text-white text-[10px] flex items-center justify-center">2</span>
+                  <span>Lấy Mật Khẩu Ứng Dụng (App Password) từ Google</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-stone-600 text-[11px]">
+                  <li>
+                    Truy cập trang bảo mật Google:{' '}
+                    <a
+                      href="https://myaccount.google.com/security"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-amber-800 font-semibold underline inline-flex items-center gap-0.5"
+                    >
+                      myaccount.google.com/security <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </li>
+                  <li>Bật <strong>Xác minh 2 bước</strong> (2-Step Verification) nếu tài khoản chưa bật.</li>
+                  <li>
+                    Tìm mục <strong>Mật khẩu ứng dụng</strong> (App passwords) và tạo mật khẩu mới tên <em>CraftingPaper</em>.
+                  </li>
+                  <li>Google sẽ cấp mã <strong>16 ký tự</strong> (ví dụ: <code className="font-mono bg-white px-1 border rounded">abcd efgh ijkl mnop</code>).</li>
+                </ol>
+              </div>
+
+              {/* Step 3 */}
+              <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200">
+                <div className="font-bold text-stone-900 mb-1 flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-amber-800 text-white text-[10px] flex items-center justify-center">3</span>
+                  <span>Dán cấu hình vào file .env</span>
+                </div>
+                <div className="relative mt-2">
+                  <pre className="p-3 bg-stone-900 text-amber-100 rounded-xl text-[11px] font-mono overflow-x-auto">
+{`GMAIL_USER="your_email@gmail.com"
+GMAIL_APP_PASSWORD="xxxx xxxx xxxx xxxx"`}
+                  </pre>
+                  <button
+                    onClick={handleCopyEnvTemplate}
+                    className="absolute top-2 right-2 px-2 py-1 rounded bg-stone-800 hover:bg-stone-700 text-stone-300 text-[10px] font-mono flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedEnvSnippet ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Đã copy</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copy mẫu</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={async () => {
+                  sound.playTap();
+                  await checkEmailConfig();
+                  setShowSetupGuideModal(false);
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-700 text-amber-100 text-xs font-bold shadow-md cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Kiểm tra lại kết nối</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSetupGuideModal(false)}
+                className="py-2.5 px-4 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-xs font-medium cursor-pointer transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Email Confirmation, Sending, & Result Verification Modal */}
+      {emailModalStep && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 md:p-7 shadow-2xl border-2 border-amber-900/30 text-stone-900 overflow-hidden">
+            {/* Close button (only when not in active sending state) */}
+            {emailModalStep !== 'sending' && (
+              <button
+                onClick={() => setEmailModalStep(null)}
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-stone-100 text-stone-500 cursor-pointer transition-colors"
+                aria-label="Đóng"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* STEP 1: CONFIRM BEFORE SENDING */}
+            {emailModalStep === 'confirm' && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-800/10 text-amber-800 mx-auto flex items-center justify-center mb-3">
+                    <Mail className="w-7 h-7 text-amber-800" />
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-stone-900">
+                    Xác Nhận Gửi Thành Phẩm
+                  </h3>
+                  <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                    Bạn có muốn tiến hành gửi hình ảnh thành phẩm giấy cỏ độc bản cùng Giấy chứng nhận nghệ nhân tới địa chỉ email dưới đây?
+                  </p>
+                </div>
+
+                {/* Recipient box */}
+                <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-stone-500 font-medium">Hòm thư nhận:</span>
+                    <span className="font-bold text-amber-950 font-mono text-sm break-all">{emailInput}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/50">
+                    <span className="text-stone-500 font-medium">Gửi từ:</span>
+                    <span className="text-stone-700 font-medium">{connectedUserEmail || 'mocxinh.handmade@gmail.com'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pt-1 border-t border-amber-200/50">
+                    <span className="text-stone-500 font-medium">Định dạng gửi:</span>
+                    <span className="text-emerald-700 font-medium">Ảnh PNG Retina 2x + Thư HTML</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalStep(null)}
+                    className="flex-1 py-2.5 px-4 rounded-xl border border-stone-300 text-stone-600 hover:bg-stone-100 text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Kiểm tra lại
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteSendEmail(emailInput)}
+                    className="flex-1 py-2.5 px-4 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-900 hover:brightness-110 active:scale-98 text-amber-50 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Send className="w-3.5 h-3.5 text-amber-200" />
+                    <span>Xác nhận & Gửi ngay</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: ACTIVE SENDING PROGRESS */}
+            {emailModalStep === 'sending' && (
+              <div className="text-center py-4 space-y-4">
+                <div className="w-16 h-16 rounded-3xl bg-amber-800/10 text-amber-800 mx-auto flex items-center justify-center relative">
+                  <Loader2 className="w-8 h-8 text-amber-800 animate-spin" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-stone-900">
+                    Đang Tiến Hành Gửi Email...
+                  </h3>
+                  <p className="text-xs text-stone-600 mt-1.5 leading-relaxed max-w-xs mx-auto">
+                    Hệ thống đang xuất ảnh độ phân giải cao và kết nối tới máy chủ Google Mail để chuyển thư. Quá trình này mất khoảng 2-3 giây.
+                  </p>
+                </div>
+                <div className="bg-stone-50 rounded-xl p-3 text-[11px] text-stone-500 font-mono">
+                  Đang gửi tới: <span className="text-stone-900 font-bold">{emailInput}</span>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: SUCCESS CONFIRMATION */}
+            {emailModalStep === 'success' && (
+              <div className="space-y-4 text-stone-900">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center mb-3 shadow-inner">
+                    <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Đã Gửi Thành Công
+                  </span>
+                  <h3 className="font-serif text-xl font-bold text-stone-900 mt-2">
+                    Xác Nhận Email Đã Gửi!
+                  </h3>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Tác phẩm giấy cỏ và Giấy chứng nhận nghệ nhân đã được chuyển tiếp thành công tới hòm thư của bạn.
+                  </p>
+                </div>
+
+                {/* Delivery Receipt Card */}
+                <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-stone-500 font-medium">Địa chỉ nhận:</span>
+                    <span className="font-bold text-emerald-950 font-mono break-all">
+                      {sentResultData?.recipientEmail}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-emerald-200/50">
+                    <span className="text-stone-500 font-medium">Trạng thái:</span>
+                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      Google Mail đã tiếp nhận (250 OK)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-emerald-200/50">
+                    <span className="text-stone-500 font-medium">Thời gian gửi:</span>
+                    <span className="text-stone-700 font-medium">{sentResultData?.timestamp}</span>
+                  </div>
+                  {sentResultData?.messageId && (
+                    <div className="pt-1 border-t border-emerald-200/50">
+                      <div className="text-[11px] text-stone-400">Mã định danh thư (Message-ID):</div>
+                      <div className="font-mono text-[10px] text-stone-600 break-all bg-white/70 p-1 rounded mt-0.5 border border-emerald-100">
+                        {sentResultData.messageId}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Helpful tip */}
+                <div className="text-[11px] text-stone-500 leading-relaxed bg-stone-50 p-3 rounded-xl border border-stone-200">
+                  💡 <strong>Lưu ý:</strong> Vui lòng mở hộp thư Gmail của bạn. Nếu chưa thấy trong mục <em>Hộp thư đến (Inbox)</em>, bạn hãy kiểm tra thêm mục <em>Thư rác (Spam)</em> hoặc <em>Quảng cáo</em>.
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <div className="flex gap-2">
+                    <a
+                      href="https://mail.google.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2.5 px-3 bg-stone-900 hover:bg-stone-800 text-amber-100 text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 text-center"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Mở hộp thư Gmail</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadImage}
+                      disabled={isDownloadingImage}
+                      className="py-2.5 px-3 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                      title="Tải thêm bản sao PNG về máy"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Lưu bản PNG</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalStep(null)}
+                    className="w-full py-2.5 px-4 bg-emerald-800 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors text-center"
+                  >
+                    Hoàn tất & Đóng
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: FAILURE CONFIRMATION */}
+            {emailModalStep === 'failed' && (
+              <div className="space-y-4 text-stone-900">
+                <div className="text-center">
+                  <div className="w-16 h-16 rounded-3xl bg-red-100 text-red-600 mx-auto flex items-center justify-center mb-3 shadow-inner">
+                    <AlertCircle className="w-9 h-9 text-red-600" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+                    Gửi Chưa Thành Công
+                  </span>
+                  <h3 className="font-serif text-xl font-bold text-stone-900 mt-2">
+                    Xác Nhận Gửi Thất Bại
+                  </h3>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Hệ thống chưa thể chuyển email tới địa chỉ <strong>{sentResultData?.recipientEmail}</strong>.
+                  </p>
+                </div>
+
+                {/* Error Box */}
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs space-y-1.5">
+                  <div className="font-bold text-red-900">Nguyên nhân chi tiết:</div>
+                  <div className="text-red-700 font-mono text-[11px] leading-relaxed break-words bg-white/70 p-2 rounded border border-red-200">
+                    {sentResultData?.errorDetail || 'Không nhận được phản hồi từ dịch vụ Google Mail.'}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleExecuteSendEmail(sentResultData?.recipientEmail || emailInput)}
+                    className="w-full py-2.5 px-4 bg-amber-800 hover:bg-amber-700 text-amber-100 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Thử gửi lại ngay</span>
+                  </button>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadImage}
+                      className="flex-1 py-2.5 px-3 border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Download className="w-3.5 h-3.5 text-stone-600" />
+                      <span>Tải ảnh PNG về máy</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmailModalStep(null);
+                        setShowSetupGuideModal(true);
+                      }}
+                      className="py-2.5 px-3 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Key className="w-3.5 h-3.5 text-amber-800" />
+                      <span>Kiểm tra key .env</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setEmailModalStep(null)}
+                    className="w-full py-2 text-stone-400 hover:text-stone-600 text-[11px] text-center"
+                  >
+                    Đóng cửa sổ
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

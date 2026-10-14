@@ -4,6 +4,7 @@ import { WorkshopStep } from '../types/paper';
 
 interface HeaderNavProps {
   currentStep: WorkshopStep;
+  onSelectStep?: (step: WorkshopStep) => void;
   isMuted: boolean;
   onToggleMute: () => void;
   onOpenBook: () => void;
@@ -30,6 +31,7 @@ const STEP_LABELS: Record<WorkshopStep, string> = {
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   currentStep,
+  onSelectStep,
   isMuted,
   onToggleMute,
   onOpenBook,
@@ -47,9 +49,24 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </span>
       </div>
 
-      {/* Zone 2: Progress indicator */}
+      {/* Zone 2: Progress indicator & quick stage navigation */}
       <div className="hidden md:flex items-center gap-2 text-xs font-serif text-amber-200/80">
-        <span className="font-semibold text-amber-300">{STEP_LABELS[currentStep]}</span>
+        {onSelectStep ? (
+          <select
+            value={currentStep}
+            onChange={(e) => onSelectStep(Number(e.target.value) as WorkshopStep)}
+            className="bg-stone-850 hover:bg-stone-800 text-amber-300 border border-stone-700/80 rounded-xl px-2.5 py-1 text-xs font-serif cursor-pointer focus:outline-none focus:border-amber-600 transition-colors"
+            title="Chuyển nhanh công đoạn"
+          >
+            {Object.entries(STEP_LABELS).map(([step, label]) => (
+              <option key={step} value={step} className="bg-stone-900 text-amber-100">
+                {label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="font-semibold text-amber-300">{STEP_LABELS[currentStep]}</span>
+        )}
         <span aria-hidden="true" className="text-stone-600">|</span>
         <span className="text-stone-400 font-mono">Bước {currentStep}/12</span>
       </div>
