@@ -86,7 +86,7 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss(), emailApiPlugin()],
     resolve: {
       alias: {
-        '@': path.resolve('.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {
